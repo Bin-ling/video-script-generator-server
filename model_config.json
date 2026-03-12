@@ -1,0 +1,45 @@
+{
+  "use_env_default": true,
+  "models": {
+    "default": {
+      "name": "默认模型",
+      "api_key": "",
+      "base_url": "",
+      "model_name": "",
+      "temperature": 0.7,
+      "max_tokens": 2000
+    },
+    "lapian": {
+      "name": "拉片分析模型",
+      "api_key": "",
+      "base_url": "",
+      "model_name": "",
+      "temperature": 0.1,
+      "max_tokens": 3000
+    },
+    "video_analysis": {
+      "name": "视频分析模型",
+      "api_key": "",
+      "base_url": "",
+      "model_name": "",
+      "temperature": 0.1,
+      "max_tokens": 2000
+    },
+    "image_analysis": {
+      "name": "图像分析模型",
+      "api_key": "",
+      "base_url": "",
+      "model_name": "",
+      "temperature": 0.1,
+      "max_tokens": 2000
+    },
+    "text_analysis": {
+      "name": "文本分析模型",
+      "api_key": "",
+      "base_url": "",
+      "model_name": "",
+      "temperature": 0.7,
+      "max_tokens": 2000
+    }
+  }
+}

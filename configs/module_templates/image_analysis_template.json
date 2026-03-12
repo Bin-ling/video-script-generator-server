@@ -1,0 +1,13 @@
+{
+  "id": "new_image_module",
+  "name": "新图像分析模块",
+  "description": "这是一个图像分析模块模板",
+  "type": "image_analysis",
+  "enabled": true,
+  "config": {
+    "input_prompt_template": "你是专业的{module_name}分析师。分析以下帧画面的内容：\n{output_keywords}",
+    "output_keywords": ["分析要点1", "分析要点2", "分析要点3"],
+    "frames_path": "${output_dir}/frames",
+    "use_multimodal": true
+  }
+}

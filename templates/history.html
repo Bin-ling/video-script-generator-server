@@ -1,0 +1,1405 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CineScope · 历史分析记录</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #05050a;
+            --bg-secondary: #0a0a12;
+            --bg-card: rgba(15, 15, 25, 0.8);
+            --bg-card-hover: rgba(20, 20, 35, 0.95);
+            --text-primary: #f0f0f5;
+            --text-secondary: #8888a0;
+            --text-muted: #555570;
+            --accent-orange: #ff6b35;
+            --accent-cyan: #00d4ff;
+            --accent-purple: #a855f7;
+            --accent-green: #22c55e;
+            --accent-red: #ef4444;
+            --border-color: rgba(255, 255, 255, 0.08);
+            --border-glow: rgba(255, 107, 53, 0.3);
+            --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
+            --shadow-md: 0 8px 32px rgba(0, 0, 0, 0.4);
+            --shadow-lg: 0 16px 64px rgba(0, 0, 0, 0.5);
+            --shadow-glow: 0 0 40px rgba(255, 107, 53, 0.15);
+            --radius-sm: 6px;
+            --radius-md: 12px;
+            --radius-lg: 20px;
+            --transition-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+            --transition-smooth: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            --transition-bounce: 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+            --font-display: 'Bebas Neue', sans-serif;
+            --font-body: 'IBM Plex Sans', sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+            --sidebar-width: 260px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: var(--font-body);
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(ellipse 80% 50% at 20% 40%, rgba(255, 107, 53, 0.08) 0%, transparent 50%),
+                radial-gradient(ellipse 60% 40% at 80% 60%, rgba(0, 212, 255, 0.06) 0%, transparent 50%),
+                radial-gradient(ellipse 100% 100% at 50% 0%, rgba(168, 85, 247, 0.04) 0%, transparent 40%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        body::after {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+            opacity: 0.03;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes slideInLeft {
+            from {
+                opacity: 0;
+                transform: translateX(-40px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+
+        @keyframes shimmer {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+        }
+
+        @keyframes glow {
+            0%, 100% { box-shadow: 0 0 20px rgba(255, 107, 53, 0.3); }
+            50% { box-shadow: 0 0 40px rgba(255, 107, 53, 0.5); }
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .sidebar {
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: var(--sidebar-width);
+            height: 100vh;
+            background: linear-gradient(180deg, var(--bg-secondary) 0%, var(--bg-primary) 100%);
+            border-right: 1px solid var(--border-color);
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            transition: transform var(--transition-smooth);
+        }
+
+        .sidebar-header {
+            padding: 32px 24px;
+            border-bottom: 1px solid var(--border-color);
+            position: relative;
+        }
+
+        .sidebar-header::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 24px;
+            right: 24px;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--accent-orange), transparent);
+            opacity: 0.5;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--accent-orange), var(--accent-cyan));
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            animation: glow 3s ease-in-out infinite;
+        }
+
+        .logo-text {
+            font-family: var(--font-display);
+            font-size: 28px;
+            letter-spacing: 2px;
+            background: linear-gradient(135deg, var(--accent-orange), var(--accent-cyan));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .nav-menu {
+            flex: 1;
+            padding: 24px 0;
+            overflow-y: auto;
+        }
+
+        .nav-section {
+            padding: 0 16px;
+            margin-bottom: 24px;
+        }
+
+        .nav-section-title {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            padding: 0 12px;
+            margin-bottom: 12px;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 14px 16px;
+            margin: 4px 0;
+            color: var(--text-secondary);
+            text-decoration: none;
+            border-radius: var(--radius-md);
+            transition: all var(--transition-fast);
+            position: relative;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        .nav-item::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 3px;
+            height: 0;
+            background: var(--accent-orange);
+            border-radius: 0 2px 2px 0;
+            transition: height var(--transition-fast);
+        }
+
+        .nav-item:hover {
+            color: var(--text-primary);
+            background: rgba(255, 107, 53, 0.08);
+        }
+
+        .nav-item:hover::before {
+            height: 24px;
+        }
+
+        .nav-item.active {
+            color: var(--text-primary);
+            background: rgba(255, 107, 53, 0.12);
+        }
+
+        .nav-item.active::before {
+            height: 32px;
+            background: linear-gradient(180deg, var(--accent-orange), var(--accent-cyan));
+        }
+
+        .nav-icon {
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+        }
+
+        .main-content {
+            margin-left: var(--sidebar-width);
+            min-height: 100vh;
+            position: relative;
+            z-index: 2;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 40px;
+        }
+
+        .page-header {
+            margin-bottom: 48px;
+            animation: fadeInUp 0.6s ease-out;
+        }
+
+        .page-title {
+            font-family: var(--font-display);
+            font-size: 56px;
+            letter-spacing: 3px;
+            margin-bottom: 16px;
+            background: linear-gradient(135deg, var(--text-primary) 0%, var(--text-secondary) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .page-subtitle {
+            font-size: 16px;
+            color: var(--text-secondary);
+            max-width: 600px;
+            line-height: 1.7;
+        }
+
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 32px;
+            margin-bottom: 32px;
+            position: relative;
+            overflow: hidden;
+            backdrop-filter: blur(20px);
+            transition: all var(--transition-smooth);
+            animation: fadeInUp 0.6s ease-out;
+            animation-fill-mode: both;
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--accent-orange), var(--accent-cyan), transparent);
+            opacity: 0.6;
+        }
+
+        .card:hover {
+            background: var(--bg-card-hover);
+            border-color: rgba(255, 107, 53, 0.2);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 24px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .card-title {
+            font-family: var(--font-display);
+            font-size: 24px;
+            letter-spacing: 1px;
+            color: var(--text-primary);
+        }
+
+        .history-list {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .history-item {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 24px;
+            cursor: pointer;
+            transition: all var(--transition-fast);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .history-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 3px;
+            height: 100%;
+            background: linear-gradient(180deg, var(--accent-orange), var(--accent-cyan));
+            opacity: 0;
+            transition: opacity var(--transition-fast);
+        }
+
+        .history-item:hover {
+            background: rgba(255, 107, 53, 0.05);
+            border-color: rgba(255, 107, 53, 0.2);
+            transform: translateX(8px);
+        }
+
+        .history-item:hover::before {
+            opacity: 1;
+        }
+
+        .history-item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 20px;
+        }
+
+        .history-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .history-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .history-title::before {
+            content: '🎬';
+            font-size: 16px;
+        }
+
+        .history-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .history-meta-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .history-meta-item .label {
+            color: var(--text-muted);
+        }
+
+        .history-meta-item .value {
+            color: var(--text-secondary);
+            font-family: var(--font-mono);
+        }
+
+        .history-actions {
+            display: flex;
+            gap: 12px;
+            flex-shrink: 0;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 12px 20px;
+            font-family: var(--font-body);
+            font-size: 14px;
+            font-weight: 600;
+            border: none;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            transition: all var(--transition-fast);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent-orange), #ff8c5a);
+            color: #fff;
+            box-shadow: 0 4px 20px rgba(255, 107, 53, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(255, 107, 53, 0.4);
+        }
+
+        .btn-danger {
+            background: rgba(239, 68, 68, 0.15);
+            color: var(--accent-red);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+
+        .btn-danger:hover {
+            background: var(--accent-red);
+            color: #fff;
+            transform: translateY(-2px);
+        }
+
+        .btn-icon {
+            font-size: 14px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 80px 20px;
+            animation: fadeInUp 0.6s ease-out;
+        }
+
+        .empty-icon {
+            font-size: 80px;
+            margin-bottom: 24px;
+            opacity: 0.5;
+            animation: pulse 2s infinite;
+        }
+
+        .empty-title {
+            font-family: var(--font-display);
+            font-size: 28px;
+            letter-spacing: 1px;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+        }
+
+        .empty-text {
+            font-size: 16px;
+            color: var(--text-muted);
+        }
+
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.95);
+            display: none;
+            align-items: flex-start;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity var(--transition-fast);
+            overflow-y: auto;
+            padding: 40px 20px;
+        }
+
+        .modal.active {
+            display: flex;
+            opacity: 1;
+        }
+
+        .modal-content {
+            width: 100%;
+            max-width: 1200px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 40px;
+            position: relative;
+            backdrop-filter: blur(20px);
+            animation: slideDown 0.3s ease-out;
+        }
+
+        .modal-content::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--accent-orange), var(--accent-cyan), transparent);
+            opacity: 0.6;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 32px;
+            padding-bottom: 24px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .modal-title {
+            font-family: var(--font-display);
+            font-size: 32px;
+            letter-spacing: 2px;
+            color: var(--text-primary);
+        }
+
+        .modal-close {
+            width: 40px;
+            height: 40px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            color: var(--text-secondary);
+            font-size: 24px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all var(--transition-fast);
+        }
+
+        .modal-close:hover {
+            background: rgba(255, 107, 53, 0.1);
+            border-color: var(--accent-orange);
+            color: var(--accent-orange);
+            transform: rotate(90deg);
+        }
+
+        .modal-body {
+            max-height: calc(90vh - 200px);
+            overflow-y: auto;
+        }
+
+        .section-tag {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-family: var(--font-display);
+            font-size: 20px;
+            letter-spacing: 1px;
+            color: var(--text-primary);
+            margin: 32px 0 20px;
+            padding-left: 16px;
+            border-left: 3px solid var(--accent-orange);
+        }
+
+        .section-tag:first-child {
+            margin-top: 0;
+        }
+
+        .data-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 16px;
+            margin-top: 24px;
+        }
+
+        .data-card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 20px;
+            text-align: center;
+            transition: all var(--transition-fast);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .data-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, var(--accent-orange), var(--accent-cyan));
+            opacity: 0;
+            transition: opacity var(--transition-fast);
+        }
+
+        .data-card:hover {
+            background: rgba(255, 107, 53, 0.05);
+            border-color: rgba(255, 107, 53, 0.2);
+            transform: translateY(-4px);
+        }
+
+        .data-card:hover::before {
+            opacity: 1;
+        }
+
+        .data-label {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+        }
+
+        .data-value {
+            font-family: var(--font-display);
+            font-size: 32px;
+            letter-spacing: 1px;
+            background: linear-gradient(135deg, var(--text-primary), var(--accent-orange));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .content-block {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 24px;
+            line-height: 1.8;
+            white-space: pre-wrap;
+            font-size: 14px;
+            color: var(--text-secondary);
+            transition: all var(--transition-fast);
+        }
+
+        .content-block:hover {
+            background: rgba(255, 255, 255, 0.04);
+            border-color: rgba(255, 107, 53, 0.2);
+        }
+
+        .video-wrapper {
+            position: relative;
+            background: #000;
+            border-radius: var(--radius-md);
+            overflow: hidden;
+            margin-top: 24px;
+        }
+
+        .video-wrapper video {
+            width: 100%;
+            display: block;
+        }
+
+        .frame-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 16px;
+            margin-top: 20px;
+        }
+
+        .frame-item {
+            position: relative;
+            border-radius: var(--radius-md);
+            overflow: hidden;
+            cursor: pointer;
+            transition: all var(--transition-fast);
+            border: 1px solid var(--border-color);
+        }
+
+        .frame-item::before {
+            content: '';
+            display: block;
+            padding-top: 56.25%;
+        }
+
+        .frame-item img {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform var(--transition-smooth);
+        }
+
+        .frame-item:hover {
+            transform: scale(1.02);
+            box-shadow: 0 8px 32px rgba(255, 107, 53, 0.2);
+            border-color: var(--accent-orange);
+        }
+
+        .frame-item:hover img {
+            transform: scale(1.1);
+        }
+
+        .loading-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 80px 20px;
+        }
+
+        .loading-spinner {
+            width: 48px;
+            height: 48px;
+            border: 3px solid rgba(255, 107, 53, 0.2);
+            border-top-color: var(--accent-orange);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-bottom: 20px;
+        }
+
+        .loading-text {
+            font-size: 16px;
+            color: var(--text-secondary);
+        }
+
+        .image-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.95);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        }
+
+        .image-modal.active {
+            display: flex;
+        }
+
+        .image-modal img {
+            max-width: 90vw;
+            max-height: 90vh;
+            border-radius: var(--radius-md);
+            box-shadow: 0 0 60px rgba(255, 107, 53, 0.3);
+        }
+
+        .image-modal-close {
+            position: absolute;
+            top: 20px;
+            right: 30px;
+            background: none;
+            border: none;
+            color: var(--text-primary);
+            font-size: 40px;
+            cursor: pointer;
+            transition: all var(--transition-fast);
+        }
+
+        .image-modal-close:hover {
+            color: var(--accent-orange);
+            transform: rotate(90deg);
+        }
+
+        @media (max-width: 1024px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+
+            .sidebar.open {
+                transform: translateX(0);
+            }
+
+            .main-content {
+                margin-left: 0;
+            }
+
+            .container {
+                padding: 24px;
+            }
+
+            .page-title {
+                font-size: 42px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 16px;
+            }
+
+            .page-title {
+                font-size: 32px;
+            }
+
+            .card {
+                padding: 20px;
+            }
+
+            .history-item-header {
+                flex-direction: column;
+            }
+
+            .history-actions {
+                width: 100%;
+                justify-content: flex-end;
+            }
+
+            .data-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .frame-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .modal-content {
+                padding: 24px;
+            }
+
+            .modal-title {
+                font-size: 24px;
+            }
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-secondary);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        ::selection {
+            background: rgba(255, 107, 53, 0.3);
+            color: var(--text-primary);
+        }
+    </style>
+</head>
+<body>
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="logo">
+                <div class="logo-icon">🎬</div>
+                <span class="logo-text">CINESCOPE</span>
+            </div>
+        </div>
+        <nav class="nav-menu">
+            <div class="nav-section">
+                <div class="nav-section-title">主要功能</div>
+                <a href="/" class="nav-item">
+                    <span class="nav-icon">🎯</span>
+                    <span>分析主页</span>
+                </a>
+                <a href="/history" class="nav-item active">
+                    <span class="nav-icon">📋</span>
+                    <span>历史记录</span>
+                </a>
+                <a href="/modules" class="nav-item">
+                    <span class="nav-icon">🧩</span>
+                    <span>模块管理</span>
+                </a>
+            </div>
+            <div class="nav-section">
+                <div class="nav-section-title">系统设置</div>
+                <a href="/settings" class="nav-item">
+                    <span class="nav-icon">⚙️</span>
+                    <span>模型配置</span>
+                </a>
+                <a href="/get_cookies" class="nav-item">
+                    <span class="nav-icon">🍪</span>
+                    <span>Cookies</span>
+                </a>
+            </div>
+        </nav>
+    </aside>
+
+    <main class="main-content">
+        <div class="container">
+            <header class="page-header">
+                <h1 class="page-title">HISTORY</h1>
+                <p class="page-subtitle">查看和管理过去的视频分析记录，追踪内容分析历史</p>
+            </header>
+
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">ANALYSIS RECORDS</h2>
+                </div>
+
+                {% if analyses %}
+                <div class="history-list">
+                    {% for analysis in analyses %}
+                    <div class="history-item" onclick="openAnalysis('{{ analysis.id }}')">
+                        <div class="history-item-header">
+                            <div class="history-info">
+                                <h3 class="history-title">{{ analysis.title or '未命名视频' }}</h3>
+                                <div class="history-meta">
+                                    <div class="history-meta-item">
+                                        <span class="label">URL:</span>
+                                        <span class="value">{{ analysis.url }}</span>
+                                    </div>
+                                    <div class="history-meta-item">
+                                        <span class="label">分析时间:</span>
+                                        <span class="value">{{ analysis.created_at }}</span>
+                                    </div>
+                                    <div class="history-meta-item">
+                                        <span class="label">保存路径:</span>
+                                        <span class="value">{{ analysis.output_dir }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="history-actions">
+                                <button class="btn btn-primary btn-view-analysis" data-id="{{ analysis.id }}">
+                                    <span class="btn-icon">👁️</span>
+                                    <span>查看</span>
+                                </button>
+                                <button class="btn btn-danger btn-delete-analysis" data-id="{{ analysis.id }}">
+                                    <span class="btn-icon">🗑️</span>
+                                    <span>删除</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="empty-state">
+                    <div class="empty-icon">📭</div>
+                    <h3 class="empty-title">NO RECORDS</h3>
+                    <p class="empty-text">暂无历史分析记录，开始分析视频后记录将显示在这里</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </main>
+
+    <div class="modal" id="analysisModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">ANALYSIS DETAILS</h2>
+                <button class="modal-close" id="closeModal">×</button>
+            </div>
+            <div class="modal-body" id="analysisContent">
+            </div>
+        </div>
+    </div>
+
+    <div class="image-modal" id="imageModal">
+        <button class="image-modal-close" onclick="closeImageModal()">×</button>
+        <img id="modalImage" src="" alt="放大图片">
+    </div>
+
+    <script>
+        const modal = document.getElementById('analysisModal');
+        const closeModal = document.getElementById('closeModal');
+        const imageModal = document.getElementById('imageModal');
+        const modalImg = document.getElementById('modalImage');
+
+        closeModal.addEventListener('click', function() {
+            modal.classList.remove('active');
+        });
+
+        window.addEventListener('click', function(e) {
+            if (e.target === modal) {
+                modal.classList.remove('active');
+            }
+        });
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                modal.classList.remove('active');
+                imageModal.classList.remove('active');
+            }
+        });
+
+        let modulesConfig = {
+            enabled: []
+        };
+
+        function loadModulesConfig() {
+            fetch('/api/modules/config')
+                .then(response => response.json())
+                .then(data => {
+                    modulesConfig = data;
+                })
+                .catch(error => {
+                    console.error('加载模块配置失败:', error);
+                });
+        }
+
+        window.onload = function() {
+            loadModulesConfig();
+        };
+
+        function openImageModal(src) {
+            modalImg.src = src;
+            imageModal.classList.add('active');
+        }
+
+        function closeImageModal() {
+            imageModal.classList.remove('active');
+        }
+
+        imageModal.addEventListener('click', function(e) {
+            if (e.target === imageModal) {
+                closeImageModal();
+            }
+        });
+
+        function loadFrames(outputDir, containerId) {
+            const framesContainer = document.getElementById(containerId);
+            if (!framesContainer) return;
+
+            framesContainer.innerHTML = '<p style="color: var(--text-muted); padding: 20px; text-align: center;">加载帧截图中...</p>';
+
+            let framesDir;
+            if (outputDir.startsWith('output')) {
+                framesDir = outputDir.replace('output\\', '').replace('output/', '') + '/frames';
+            } else {
+                framesDir = outputDir + '/frames';
+            }
+            const baseUrl = `/output/${framesDir}/`;
+
+            const maxFrames = 8;
+            const folderName = outputDir.split('\\').pop().split('/').pop();
+            const prefix = folderName.split('_')[0];
+
+            const frameUrl = `${baseUrl}frame_${prefix}_{i}.jpg`;
+
+            const framePromises = [];
+
+            for (let i = 0; i < maxFrames; i++) {
+                framePromises.push(
+                    new Promise((resolve) => {
+                        const img = new Image();
+                        img.onload = () => {
+                            resolve(img);
+                        };
+                        img.onerror = () => {
+                            resolve(null);
+                        };
+                        img.src = frameUrl.replace('{i}', i);
+                    })
+                );
+            }
+
+            Promise.all(framePromises).then(images => {
+                const validImages = images.filter(img => img !== null);
+
+                if (validImages.length > 0) {
+                    framesContainer.innerHTML = '';
+                    validImages.forEach((img, index) => {
+                        const frameItem = document.createElement('div');
+                        frameItem.className = 'frame-item';
+                        img.alt = `帧 ${index + 1}`;
+                        img.onclick = () => openImageModal(img.src);
+                        frameItem.appendChild(img);
+                        framesContainer.appendChild(frameItem);
+                    });
+                } else {
+                    const framePromises2 = [];
+                    for (let i = 0; i < maxFrames; i++) {
+                        framePromises2.push(
+                            new Promise((resolve) => {
+                                const img = new Image();
+                                img.onload = () => {
+                                    resolve(img);
+                                };
+                                img.onerror = () => {
+                                    resolve(null);
+                                };
+                                img.src = `${baseUrl}frame_${i}.jpg`;
+                            })
+                        );
+                    }
+
+                    Promise.all(framePromises2).then(images2 => {
+                        const validImages2 = images2.filter(img => img !== null);
+
+                        if (validImages2.length > 0) {
+                            framesContainer.innerHTML = '';
+                            validImages2.forEach((img, index) => {
+                                const frameItem = document.createElement('div');
+                                frameItem.className = 'frame-item';
+                                img.alt = `帧 ${index + 1}`;
+                                img.onclick = () => openImageModal(img.src);
+                                frameItem.appendChild(img);
+                                framesContainer.appendChild(frameItem);
+                            });
+                        } else {
+                            framesContainer.innerHTML = '<p style="color: var(--text-muted); padding: 20px; text-align: center;">暂无帧截图</p>';
+                        }
+                    });
+                }
+            });
+        }
+
+        function openAnalysis(analysisId) {
+            const analysisContent = document.getElementById('analysisContent');
+
+            analysisContent.innerHTML = `
+                <div class="loading-container">
+                    <div class="loading-spinner"></div>
+                    <p class="loading-text">加载分析详情中...</p>
+                </div>
+            `;
+            modal.classList.add('active');
+
+            fetch(`/api/get_analysis/${analysisId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data) {
+                        let modulesHtml = '';
+                        const enabledModules = data.enabled_modules || [];
+                        const modulesInfo = data.modules_info || {};
+
+                        enabledModules.forEach(moduleId => {
+                            const moduleInfo = modulesInfo[moduleId];
+                            if (!moduleInfo) return;
+
+                            const moduleType = moduleInfo.type || 'text_analysis';
+                            const moduleName = moduleInfo.name || moduleId;
+
+                            const moduleFieldMap = {
+                                'content_analysis': 'content_ana',
+                                'data_analysis': 'data_ana',
+                                'script_analysis': 'script_ana',
+                                'storyboard_analysis': 'storyboard',
+                                'photo_analysis': 'photo_ana',
+                                'color_analysis': 'color_ana',
+                                'bgm_analysis': 'bgm',
+                                'topic_analysis': 'topic',
+                                'title_analysis': 'analysis_title',
+                                'cover_analysis': 'cover',
+                                'publish_time_analysis': 'best_time'
+                            };
+
+                            const fieldName = moduleFieldMap[moduleId] || moduleId;
+                            const content = data[fieldName] || '暂无分析';
+
+                            if (!content || !content.trim()) return;
+
+                            let icon, cssClass;
+                            let mediaHtml = '';
+
+                            if (moduleType === 'video_analysis') {
+                                icon = '🎬';
+                                cssClass = 'content-block';
+                                if (data.output_dir) {
+                                    mediaHtml = `
+                                        <div class="video-wrapper" style="aspect-ratio: ${data.info.width || 16} / ${data.info.height || 9}; margin-top: 16px;">
+                                            <video controls style="width: 100%; height: 100%; object-fit: contain;">
+                                                <source src='/output/${data.output_dir.replace("output\\", "")}/video.mp4' type='video/mp4'>
+                                                您的浏览器不支持视频播放。
+                                            </video>
+                                        </div>
+                                    `;
+                                }
+                            } else if (moduleType === 'image_analysis') {
+                                icon = '🖼️';
+                                cssClass = 'content-block';
+                                if (data.output_dir) {
+                                    mediaHtml = `
+                                        <div class="section-tag" style="margin-top: 16px;">🎬 关键帧</div>
+                                        <div class="frame-grid" id='frames_${moduleId}'></div>
+                                    `;
+                                }
+                            } else {
+                                icon = '📝';
+                                cssClass = 'content-block';
+                            }
+
+                            const specialConfig = {
+                                'data_analysis': { 'icon': '📈' },
+                                'content_analysis': { 'icon': '🎯' },
+                                'script_analysis': { 'icon': '📜' },
+                                'storyboard_analysis': { 'icon': '🎬' },
+                                'photo_analysis': { 'icon': '🎥' },
+                                'color_analysis': { 'icon': '🎨' },
+                                'bgm_analysis': { 'icon': '🎵' },
+                                'topic_analysis': { 'icon': '🔥' },
+                                'title_analysis': { 'icon': '✍️' },
+                                'cover_analysis': { 'icon': '🖼️' },
+                                'publish_time_analysis': { 'icon': '⏰' }
+                            };
+
+                            if (specialConfig[moduleId]) {
+                                icon = specialConfig[moduleId].icon;
+                            }
+
+                            modulesHtml += `
+                                <div class="section-tag">${icon} ${moduleName}</div>
+                                <div class='${cssClass}'>${content}</div>
+                                ${mediaHtml}
+                            `;
+                        });
+
+                        const skeleton = `
+                            <div class="section-tag">🔗 视频来源</div>
+                            <div class="content-block">${data.url}</div>
+
+                            <div class="section-tag">📊 数据概览</div>
+                            <div class="data-grid">
+                                <div class="data-card">
+                                    <div class="data-label">播放量</div>
+                                    <div class="data-value">${data.stats.play || 0}</div>
+                                </div>
+                                <div class="data-card">
+                                    <div class="data-label">点赞数</div>
+                                    <div class="data-value">${data.stats.like || 0}</div>
+                                </div>
+                                <div class="data-card">
+                                    <div class="data-label">评论数</div>
+                                    <div class="data-value">${data.stats.comment || 0}</div>
+                                </div>
+                                <div class="data-card">
+                                    <div class="data-label">收藏数</div>
+                                    <div class="data-value">${data.stats.collect || 0}</div>
+                                </div>
+                                <div class="data-card">
+                                    <div class="data-label">分享数</div>
+                                    <div class="data-value">${data.stats.share || 0}</div>
+                                </div>
+                                <div class="data-card">
+                                    <div class="data-label">时长</div>
+                                    <div class="data-value">${data.info.duration || 0}s</div>
+                                </div>
+                            </div>
+
+                            ${data.output_dir ? `
+                            <div class="section-tag">🎬 视频预览</div>
+                            <div class="video-wrapper" style="aspect-ratio: ${data.info.width || 16} / ${data.info.height || 9};">
+                                <video controls style="width: 100%; height: 100%; object-fit: contain;">
+                                    <source src='/output/${data.output_dir.replace("output\\", "")}/video.mp4' type='video/mp4'>
+                                    您的浏览器不支持视频播放。
+                                </video>
+                            </div>
+                            ` : ''}
+
+                            ${modulesHtml}
+                        `;
+
+                        analysisContent.innerHTML = skeleton;
+
+                        if (data.output_dir) {
+                            setTimeout(() => {
+                                const imageModules = enabledModules.filter(mid => {
+                                    const info = modulesInfo[mid];
+                                    return info && info.type === 'image_analysis';
+                                });
+
+                                imageModules.forEach(moduleId => {
+                                    loadFrames(data.output_dir, `frames_${moduleId}`);
+                                });
+                            }, 500);
+                        }
+                    } else {
+                        analysisContent.innerHTML = '<p style="color: var(--text-muted); padding: 20px; text-align: center;">无法加载分析详情</p>';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    analysisContent.innerHTML = '<p style="color: var(--accent-red); padding: 20px; text-align: center;">加载失败，请重试</p>';
+                });
+        }
+
+        function deleteAnalysis(event, analysisId) {
+            event.stopPropagation();
+            if (!confirm('确定要删除这条分析记录吗？')) {
+                return;
+            }
+
+            fetch(`/api/delete_analysis/${analysisId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        const historyItem = document.querySelector(`[onclick="openAnalysis('${analysisId}')"]`);
+                        if (historyItem) {
+                            historyItem.style.opacity = '0';
+                            historyItem.style.transform = 'translateX(-20px)';
+                            historyItem.style.transition = 'all 0.3s ease';
+                            setTimeout(() => {
+                                location.reload();
+                            }, 300);
+                        } else {
+                            location.reload();
+                        }
+                    } else {
+                        alert('删除失败，请重试');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('删除失败，请重试');
+                });
+        }
+
+        const sidebar = document.getElementById('sidebar');
+        let touchStartX = 0;
+
+        document.addEventListener('touchstart', e => {
+            touchStartX = e.touches[0].clientX;
+        });
+
+        document.addEventListener('touchend', e => {
+            const touchEndX = e.changedTouches[0].clientX;
+            const diff = touchEndX - touchStartX;
+
+            if (diff > 50 && touchStartX < 50) {
+                sidebar.classList.add('open');
+            } else if (diff < -50) {
+                sidebar.classList.remove('open');
+            }
+        });
+
+        document.addEventListener('click', function(e) {
+            const deleteBtn = e.target.closest('.btn-delete-analysis');
+            if (deleteBtn) {
+                const analysisId = deleteBtn.getAttribute('data-id');
+                if (analysisId) {
+                    deleteAnalysis(e, analysisId);
+                }
+                return;
+            }
+            
+            const viewBtn = e.target.closest('.btn-view-analysis');
+            if (viewBtn) {
+                const analysisId = viewBtn.getAttribute('data-id');
+                if (analysisId) {
+                    openAnalysis(analysisId);
+                }
+            }
+        });
+    </script>
+</body>
+</html>

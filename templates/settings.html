@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CineScope · 模型配置</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #05050a;
+            --bg-secondary: #0a0a12;
+            --bg-card: rgba(15, 15, 25, 0.8);
+            --text-primary: #f0f0f5;
+            --text-secondary: #8888a0;
+            --text-muted: #555570;
+            --accent-orange: #ff6b35;
+            --accent-cyan: #00d4ff;
+            --accent-purple: #a855f7;
+            --accent-green: #22c55e;
+            --accent-red: #ef4444;
+            --border-color: rgba(255, 255, 255, 0.08);
+            --radius-sm: 6px;
+            --radius-md: 12px;
+            --radius-lg: 20px;
+            --transition-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+            --transition-smooth: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            --font-display: 'Bebas Neue', sans-serif;
+            --font-body: 'IBM Plex Sans', sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+            --sidebar-width: 260px;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: var(--font-body);
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background:
+                radial-gradient(ellipse 80% 50% at 20% 40%, rgba(255, 107, 53, 0.08) 0%, transparent 50%),
+                radial-gradient(ellipse 60% 40% at 80% 60%, rgba(0, 212, 255, 0.06) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: 0;
+        }
+        .layout { display: flex; min-height: 100vh; position: relative; z-index: 2; }
+        aside {
+            width: var(--sidebar-width);
+            background: var(--bg-secondary);
+            border-right: 1px solid var(--border-color);
+            padding: 24px 0;
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            top: 0; left: 0; bottom: 0;
+            z-index: 100;
+        }
+        .logo { padding: 0 24px 32px; border-bottom: 1px solid var(--border-color); margin-bottom: 24px; }
+        .logo-icon { display: flex; align-items: center; gap: 12px; }
+        .logo-text {
+            font-family: var(--font-display);
+            font-size: 28px;
+            letter-spacing: 3px;
+            background: linear-gradient(135deg, var(--accent-orange), var(--accent-cyan));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .nav-menu { flex: 1; overflow-y: auto; }
+        .nav-section { padding: 0 16px; margin-bottom: 24px; }
+        .nav-section-title {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--text-muted);
+            padding: 0 12px;
+            margin-bottom: 12px;
+        }
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            border-radius: var(--radius-md);
+            transition: all var(--transition-fast);
+            margin-bottom: 4px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        .nav-item:hover { background: var(--bg-card); color: var(--text-primary); }
+        .nav-item.active {
+            background: linear-gradient(135deg, rgba(255, 107, 53, 0.15), rgba(255, 107, 53, 0.05));
+            color: var(--accent-orange);
+            border: 1px solid rgba(255, 107, 53, 0.3);
+        }
+        .nav-icon { font-size: 18px; width: 24px; text-align: center; }
+        main { flex: 1; margin-left: var(--sidebar-width); padding: 40px; position: relative; z-index: 1; }
+        .page-header { margin-bottom: 40px; }
+        .page-title {
+            font-family: var(--font-display);
+            font-size: 48px;
+            letter-spacing: 4px;
+            margin-bottom: 12px;
+        }
+        .page-subtitle { color: var(--text-secondary); font-size: 16px; max-width: 600px; }
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 32px;
+            margin-bottom: 24px;
+            backdrop-filter: blur(10px);
+        }
+        .card-title {
+            font-family: var(--font-display);
+            font-size: 24px;
+            letter-spacing: 2px;
+            margin-bottom: 24px;
+            color: var(--accent-cyan);
+        }
+        .model-section {
+            margin-bottom: 32px;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-color);
+        }
+        .model-section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+        .model-section-title { font-size: 16px; font-weight: 600; color: var(--text-primary); }
+        .model-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            background: rgba(168, 85, 247, 0.2);
+            color: var(--accent-purple);
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        .form-group { margin-bottom: 20px; }
+        .form-label {
+            display: block;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .form-input {
+            width: 100%;
+            padding: 12px 16px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            color: var(--text-primary);
+            font-family: var(--font-body);
+            font-size: 14px;
+            transition: all var(--transition-fast);
+        }
+        .form-input:focus { outline: none; border-color: var(--accent-cyan); box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.1); }
+        .form-input::placeholder { color: var(--text-muted); }
+        select.form-input { cursor: pointer; }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 14px 28px;
+            font-family: var(--font-body);
+            font-size: 14px;
+            font-weight: 600;
+            border: none;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            transition: all var(--transition-smooth);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent-orange), #ff8f5a);
+            color: white;
+            box-shadow: 0 4px 20px rgba(255, 107, 53, 0.3);
+        }
+        .btn-primary:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(255, 107, 53, 0.4); }
+        .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-loading { position: relative; }
+        .loading-spinner {
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            padding: 16px 24px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            display: none;
+            align-items: center;
+            gap: 12px;
+            z-index: 1000;
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all var(--transition-smooth);
+        }
+        .toast.show { display: flex; transform: translateY(0); opacity: 1; }
+        .toast.success { border-color: var(--accent-green); }
+        .toast.error { border-color: var(--accent-red); }
+        .toast-icon { font-size: 20px; }
+        .toast-message { font-size: 14px; }
+        @media (max-width: 768px) {
+            aside { width: 80px; }
+            .logo-text, .nav-section-title, .nav-item span:last-child { display: none; }
+            .nav-item { justify-content: center; padding: 12px; }
+            main { margin-left: 80px; padding: 20px; }
+            .page-title { font-size: 32px; }
+            .form-row { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="layout">
+        <aside>
+            <div class="logo">
+                <div class="logo-icon">
+                    <span style="font-size: 32px;">🎬</span>
+                    <span class="logo-text">CINESCOPE</span>
+                </div>
+            </div>
+            <nav class="nav-menu">
+                <div class="nav-section">
+                    <div class="nav-section-title">主要功能</div>
+                    <a href="/" class="nav-item">
+                        <span class="nav-icon">🎯</span>
+                        <span>分析主页</span>
+                    </a>
+                    <a href="/lapian" class="nav-item">
+                        <span class="nav-icon">🎬</span>
+                        <span>视频拉片</span>
+                    </a>
+                    <a href="/history" class="nav-item">
+                        <span class="nav-icon">📋</span>
+                        <span>历史记录</span>
+                    </a>
+                </div>
+                <div class="nav-section">
+                    <div class="nav-section-title">系统设置</div>
+                    <a href="/settings" class="nav-item active">
+                        <span class="nav-icon">⚙️</span>
+                        <span>模型配置</span>
+                    </a>
+                </div>
+            </nav>
+        </aside>
+
+        <main>
+            <header class="page-header">
+                <h1 class="page-title">MODEL CONFIG</h1>
+                <p class="page-subtitle">为不同分析模块配置专属的AI模型，优化分析效果和成本</p>
+            </header>
+
+            <div class="card">
+                <h2 class="card-title">🔧 模型配置</h2>
+                <p style="color: var(--text-secondary); margin-bottom: 24px;">
+                    为每个分析模块配置独立的模型。可以使用相同的模型，也可以为不同模块选择不同的模型以优化效果和成本。
+                </p>
+
+                <div id="modelsContainer"></div>
+
+                <button class="btn btn-primary" id="submitBtn" onclick="saveAllConfigs()">
+                    <span>💾</span>
+                    <span>保存所有配置</span>
+                </button>
+            </div>
+        </main>
+    </div>
+
+    <div class="toast" id="toast">
+        <span class="toast-icon"></span>
+        <span class="toast-message"></span>
+    </div>
+
+    <script>
+        const moduleNames = {
+            'default': { name: '默认模型', desc: '通用模型，其他模块未配置时使用' },
+            'lapian': { name: '拉片分析模型', desc: '专门用于视频镜头分析、景别识别、运镜分析' },
+            'video_analysis': { name: '视频分析模型', desc: '用于视频内容深度分析' },
+            'image_analysis': { name: '图像分析模型', desc: '用于图片分析和识别' },
+            'text_analysis': { name: '文本分析模型', desc: '用于文案和脚本分析' }
+        };
+
+        let configs = {};
+
+        async function loadConfigs() {
+            try {
+                const response = await fetch('/api/model_configs');
+                const data = await response.json();
+                configs = data.models || {};
+                renderModels();
+            } catch (e) {
+                console.error('加载配置失败:', e);
+            }
+        }
+
+        function renderModels() {
+            const container = document.getElementById('modelsContainer');
+            let html = '';
+
+            for (const [key, module] of Object.entries(moduleNames)) {
+                const config = configs[key] || {};
+                html += `
+                    <div class="model-section">
+                        <div class="model-section-header">
+                            <div>
+                                <div class="model-section-title">${module.name}</div>
+                                <div style="font-size: 12px; color: var(--text-muted);">${module.desc}</div>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">模型名称</label>
+                            <input type="text" class="form-input" id="model_name_${key}" placeholder="例如: Doubao-Seed-2.0-pro" value="${config.model_name || ''}">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">API Key</label>
+                            <input type="text" class="form-input" id="api_key_${key}" placeholder="请输入API密钥" value="${config.api_key || ''}">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">API Base URL</label>
+                            <input type="text" class="form-input" id="base_url_${key}" placeholder="例如: https://ark.cn-beijing.volces.com/api/coding/v3" value="${config.base_url || ''}">
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">温度参数</label>
+                                <input type="number" class="form-input" id="temperature_${key}" step="0.1" min="0" max="2" value="${config.temperature || 0.7}">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">最大Tokens</label>
+                                <input type="number" class="form-input" id="max_tokens_${key}" min="100" max="32000" value="${config.max_tokens || 2000}">
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            container.innerHTML = html;
+        }
+
+        async function saveAllConfigs() {
+            const submitBtn = document.getElementById('submitBtn');
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<div class="loading-spinner"></div><span>保存中...</span>';
+
+            const models = {};
+
+            for (const key of Object.keys(moduleNames)) {
+                models[key] = {
+                    name: moduleNames[key].name,
+                    model_name: document.getElementById(`model_name_${key}`).value,
+                    api_key: document.getElementById(`api_key_${key}`).value,
+                    base_url: document.getElementById(`base_url_${key}`).value,
+                    temperature: parseFloat(document.getElementById(`temperature_${key}`).value) || 0.7,
+                    max_tokens: parseInt(document.getElementById(`max_tokens_${key}`).value) || 2000
+                };
+            }
+
+            try {
+                const response = await fetch('/api/save_model_config', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ models })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showToast('配置保存成功！', 'success');
+                    loadConfigs();
+                } else {
+                    showToast('保存失败: ' + (data.error || '未知错误'), 'error');
+                }
+            } catch (error) {
+                showToast('保存失败: ' + error.message, 'error');
+            }
+
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<span>💾</span><span>保存所有配置</span>';
+        }
+
+        function showToast(message, type) {
+            const toast = document.getElementById('toast');
+            const icon = toast.querySelector('.toast-icon');
+            const msg = toast.querySelector('.toast-message');
+
+            toast.className = 'toast ' + type;
+            icon.textContent = type === 'success' ? '✅' : '❌';
+            msg.textContent = message;
+
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+
+        loadConfigs();
+    </script>
+</body>
+</html>

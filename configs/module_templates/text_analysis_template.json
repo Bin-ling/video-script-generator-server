@@ -1,0 +1,12 @@
+{
+  "id": "new_text_module",
+  "name": "新文本分析模块",
+  "description": "这是一个文本分析模块模板",
+  "type": "text_analysis",
+  "enabled": true,
+  "config": {
+    "input_prompt_template": "你是专业的{module_name}分析师。根据以下内容，分析：\n{output_keywords}",
+    "output_keywords": ["分析要点1", "分析要点2", "分析要点3"],
+    "use_multimodal": false
+  }
+}

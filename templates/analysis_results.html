@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>视频分析结果</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 40px;
+        }
+
+        .input-section {
+            margin-bottom: 40px;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .input-group select {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        .input-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 40px;
+            border: none;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            width: 100%;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .results-section {
+            display: none;
+        }
+
+        .results-section.active {
+            display: block;
+        }
+
+        .result-card {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .result-card h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+
+        .result-content {
+            white-space: pre-wrap;
+            line-height: 1.6;
+            color: #333;
+        }
+
+        .frame-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .frame-card {
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .frame-card img {
+            width: 100%;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+
+        .frame-info {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 10px;
+        }
+
+        .frame-analysis {
+            font-size: 13px;
+            line-height: 1.4;
+            color: #333;
+        }
+
+        .log-section {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 20px;
+            border-radius: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            max-height: 300px;
+            overflow-y: auto;
+            margin-top: 20px;
+        }
+
+        .log-entry {
+            margin-bottom: 5px;
+        }
+
+        .log-entry.success {
+            color: #4caf50;
+        }
+
+        .log-entry.error {
+            color: #f44336;
+        }
+
+        .log-entry.info {
+            color: #2196f3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📊 视频分析结果</h1>
+            <p>查看视频分析结果，包括帧数、帧截图和分析内容</p>
+        </div>
+
+        <div class="content">
+            <div class="input-section">
+                <div class="input-group">
+                    <label for="resultFile">选择分析结果文件</label>
+                    <select id="resultFile">
+                        <option value="">-- 选择文件 --</option>
+                    </select>
+                </div>
+                <button class="btn" id="loadBtn" onclick="loadResult()">加载结果</button>
+            </div>
+
+            <div class="results-section" id="resultsSection">
+                <div class="result-card">
+                    <h3>分析摘要</h3>
+                    <div class="result-content" id="summaryContent"></div>
+                </div>
+                
+                <div class="result-card">
+                    <h3>帧分析详情</h3>
+                    <div class="frame-grid" id="frameGrid"></div>
+                </div>
+                
+                <div class="log-section" id="logSection"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let modulesConfig = {
+            enabled: []
+        };
+
+        // 加载模块配置
+        function loadModulesConfig() {
+            fetch('/api/modules/config')
+                .then(response => response.json())
+                .then(data => {
+                    modulesConfig = data;
+                    addLog('模块配置加载成功', 'success');
+                })
+                .catch(error => {
+                    addLog('加载模块配置失败: ' + error.message, 'error');
+                });
+        }
+
+        // 加载保存的分析结果文件列表
+        window.onload = function() {
+            loadModulesConfig();
+            fetch('/api/analysis/results')
+                .then(response => response.json())
+                .then(data => {
+                    const select = document.getElementById('resultFile');
+                    select.innerHTML = '<option value="">-- 选择文件 --</option>';
+                    data.files.forEach(file => {
+                        const option = document.createElement('option');
+                        option.value = file;
+                        option.textContent = file;
+                        select.appendChild(option);
+                    });
+                })
+                .catch(error => {
+                    addLog('加载文件列表失败: ' + error.message, 'error');
+                });
+        };
+
+        function loadResult() {
+            const fileName = document.getElementById('resultFile').value;
+            if (!fileName) {
+                alert('请选择分析结果文件');
+                return;
+            }
+
+            const btn = document.getElementById('loadBtn');
+            const resultsSection = document.getElementById('resultsSection');
+            const logSection = document.getElementById('logSection');
+            const summaryContent = document.getElementById('summaryContent');
+            const frameGrid = document.getElementById('frameGrid');
+
+            btn.disabled = true;
+            resultsSection.classList.remove('active');
+            logSection.innerHTML = '';
+
+            addLog('加载分析结果: ' + fileName, 'info');
+
+            fetch('/api/analysis/load', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({file_name: fileName})
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('服务器响应失败');
+                }
+                return response.json();
+            })
+            .then(data => {
+                btn.disabled = false;
+                resultsSection.classList.add('active');
+
+                if (data.error) {
+                    addLog('加载失败: ' + data.error, 'error');
+                    summaryContent.textContent = '加载失败: ' + data.error;
+                } else {
+                    addLog('加载成功!', 'success');
+                    
+                    // 显示分析摘要
+                    summaryContent.innerHTML = `
+                        <strong>分析时间:</strong> ${new Date(data.timestamp * 1000).toLocaleString()}<br>
+                        <strong>视频路径:</strong> ${data.video_path}<br>
+                        <strong>帧间隔:</strong> ${data.frame_interval}秒<br>
+                        <strong>总帧数:</strong> ${data.frame_count}<br>
+                        <strong>帧保存目录:</strong> ${data.frames_dir}<br>
+                        <strong>分析结果:</strong><br>${data.result}
+                    `;
+                    
+                    // 显示帧分析详情
+                    frameGrid.innerHTML = '';
+                    if (data.frames && data.frames.length > 0) {
+                        data.frames.forEach(frame => {
+                            const frameCard = document.createElement('div');
+                            frameCard.className = 'frame-card';
+                            
+                            // 检查帧文件是否存在
+                            const frameUrl = frame.frame_path.replace(/\\/g, '/');
+                            
+                            frameCard.innerHTML = `
+                                <div class="frame-info">
+                                    <strong>帧索引:</strong> ${frame.frame_index}<br>
+                                    <strong>时间点:</strong> ${frame.timestamp}秒
+                                </div>
+                                <img src="/${frameUrl}" alt="帧 ${frame.frame_index}" onerror="this.src='data:image/svg+xml;charset=utf-8,%3Csvg xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22 width%3D%22300%22 height%3D%22200%22 viewBox%3D%220 0 300 200%22%3E%3Crect width%3D%22300%22 height%3D%22200%22 fill%3D%22%23f0f0f0%22%3E%3C%2Frect%3E%3Ctext x%3D%22150%22 y%3D%22100%22 text-anchor%3D%22middle%22 fill%3D%22%23999%22 font-size%3D%2214%22%3E图片加载失败%3C%2Ftext%3E%3C%2Fsvg%3E'">
+                                <div class="frame-analysis">
+                                    <strong>分析结果:</strong><br>${frame.analysis}
+                                </div>
+                            `;
+                            
+                            frameGrid.appendChild(frameCard);
+                        });
+                    } else {
+                        frameGrid.innerHTML = '<p>暂无帧分析数据</p>';
+                    }
+                }
+            })
+            .catch(error => {
+                btn.disabled = false;
+                addLog('加载失败: ' + error.message, 'error');
+                alert('加载失败: ' + error.message);
+            });
+        }
+
+        function addLog(message, type = 'info') {
+            const logSection = document.getElementById('logSection');
+            const logEntry = document.createElement('div');
+            logEntry.className = 'log-entry ' + type;
+            logEntry.textContent = '[' + new Date().toLocaleTimeString() + '] ' + message;
+            logSection.appendChild(logEntry);
+            logSection.scrollTop = logSection.scrollHeight;
+        }
+    </script>
+</body>
+</html>

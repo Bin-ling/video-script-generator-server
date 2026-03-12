@@ -1,0 +1,1365 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CineScope · 模块管理</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #05050a;
+            --bg-secondary: #0a0a12;
+            --bg-card: rgba(15, 15, 25, 0.8);
+            --bg-card-hover: rgba(20, 20, 35, 0.95);
+            --text-primary: #f0f0f5;
+            --text-secondary: #8888a0;
+            --text-muted: #555570;
+            --accent-orange: #ff6b35;
+            --accent-cyan: #00d4ff;
+            --accent-purple: #a855f7;
+            --accent-green: #22c55e;
+            --accent-red: #ef4444;
+            --accent-yellow: #f59e0b;
+            --border-color: rgba(255, 255, 255, 0.08);
+            --border-glow: rgba(255, 107, 53, 0.3);
+            --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
+            --shadow-md: 0 8px 32px rgba(0, 0, 0, 0.4);
+            --shadow-lg: 0 16px 64px rgba(0, 0, 0, 0.5);
+            --shadow-glow: 0 0 40px rgba(255, 107, 53, 0.15);
+            --radius-sm: 6px;
+            --radius-md: 12px;
+            --radius-lg: 20px;
+            --transition-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+            --transition-smooth: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            --transition-bounce: 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+            --font-display: 'Bebas Neue', sans-serif;
+            --font-body: 'IBM Plex Sans', sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+            --sidebar-width: 260px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: var(--font-body);
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(ellipse 80% 50% at 20% 40%, rgba(255, 107, 53, 0.08) 0%, transparent 50%),
+                radial-gradient(ellipse 60% 40% at 80% 60%, rgba(0, 212, 255, 0.06) 0%, transparent 50%),
+                radial-gradient(ellipse 100% 100% at 50% 0%, rgba(168, 85, 247, 0.04) 0%, transparent 40%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        body::after {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+            opacity: 0.03;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+
+        @keyframes glow {
+            0%, 100% { box-shadow: 0 0 20px rgba(255, 107, 53, 0.3); }
+            50% { box-shadow: 0 0 40px rgba(255, 107, 53, 0.5); }
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .sidebar {
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: var(--sidebar-width);
+            height: 100vh;
+            background: linear-gradient(180deg, var(--bg-secondary) 0%, var(--bg-primary) 100%);
+            border-right: 1px solid var(--border-color);
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            transition: transform var(--transition-smooth);
+        }
+
+        .sidebar-header {
+            padding: 32px 24px;
+            border-bottom: 1px solid var(--border-color);
+            position: relative;
+        }
+
+        .sidebar-header::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 24px;
+            right: 24px;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--accent-orange), transparent);
+            opacity: 0.5;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--accent-orange), var(--accent-cyan));
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            animation: glow 3s ease-in-out infinite;
+        }
+
+        .logo-text {
+            font-family: var(--font-display);
+            font-size: 28px;
+            letter-spacing: 2px;
+            background: linear-gradient(135deg, var(--accent-orange), var(--accent-cyan));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .nav-menu {
+            flex: 1;
+            padding: 24px 0;
+            overflow-y: auto;
+        }
+
+        .nav-section {
+            padding: 0 16px;
+            margin-bottom: 24px;
+        }
+
+        .nav-section-title {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            padding: 0 12px;
+            margin-bottom: 12px;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 14px 16px;
+            margin: 4px 0;
+            color: var(--text-secondary);
+            text-decoration: none;
+            border-radius: var(--radius-md);
+            transition: all var(--transition-fast);
+            position: relative;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        .nav-item::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 3px;
+            height: 0;
+            background: var(--accent-orange);
+            border-radius: 0 2px 2px 0;
+            transition: height var(--transition-fast);
+        }
+
+        .nav-item:hover {
+            color: var(--text-primary);
+            background: rgba(255, 107, 53, 0.08);
+        }
+
+        .nav-item:hover::before {
+            height: 24px;
+        }
+
+        .nav-item.active {
+            color: var(--text-primary);
+            background: rgba(255, 107, 53, 0.12);
+        }
+
+        .nav-item.active::before {
+            height: 32px;
+            background: linear-gradient(180deg, var(--accent-orange), var(--accent-cyan));
+        }
+
+        .nav-icon {
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+        }
+
+        .main-content {
+            margin-left: var(--sidebar-width);
+            min-height: 100vh;
+            position: relative;
+            z-index: 2;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 40px;
+        }
+
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 48px;
+            animation: fadeInUp 0.6s ease-out;
+        }
+
+        .page-title {
+            font-family: var(--font-display);
+            font-size: 56px;
+            letter-spacing: 3px;
+            margin-bottom: 16px;
+            background: linear-gradient(135deg, var(--text-primary) 0%, var(--text-secondary) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .page-subtitle {
+            font-size: 16px;
+            color: var(--text-secondary);
+            max-width: 600px;
+            line-height: 1.7;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 12px;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 14px 28px;
+            font-family: var(--font-body);
+            font-size: 14px;
+            font-weight: 600;
+            border: none;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            transition: all var(--transition-fast);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent-orange), #ff8c5a);
+            color: #fff;
+            box-shadow: 0 4px 20px rgba(255, 107, 53, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(255, 107, 53, 0.4);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: var(--accent-orange);
+        }
+
+        .module-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+            gap: 24px;
+        }
+
+        .module-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 28px;
+            position: relative;
+            overflow: hidden;
+            backdrop-filter: blur(20px);
+            transition: all var(--transition-smooth);
+            animation: fadeInUp 0.6s ease-out;
+            animation-fill-mode: both;
+        }
+
+        .module-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--accent-orange), var(--accent-cyan), transparent);
+            opacity: 0.6;
+        }
+
+        .module-card:hover {
+            background: var(--bg-card-hover);
+            border-color: rgba(255, 107, 53, 0.2);
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-glow);
+        }
+
+        .module-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 16px;
+        }
+
+        .module-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .module-title::before {
+            content: '🧩';
+            font-size: 16px;
+        }
+
+        .module-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            border-radius: var(--radius-sm);
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .module-status.enabled {
+            background: rgba(34, 197, 94, 0.15);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+            color: var(--accent-green);
+        }
+
+        .module-status.disabled {
+            background: rgba(239, 68, 68, 0.15);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: var(--accent-red);
+        }
+
+        .module-type {
+            display: inline-block;
+            padding: 6px 14px;
+            background: rgba(168, 85, 247, 0.15);
+            border: 1px solid rgba(168, 85, 247, 0.3);
+            border-radius: var(--radius-sm);
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--accent-purple);
+            margin-bottom: 16px;
+        }
+
+        .module-description {
+            font-size: 14px;
+            color: var(--text-secondary);
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+
+        .module-actions {
+            display: flex;
+            gap: 10px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .btn-sm {
+            padding: 10px 16px;
+            font-size: 13px;
+        }
+
+        .btn-edit {
+            background: rgba(0, 212, 255, 0.15);
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            color: var(--accent-cyan);
+        }
+
+        .btn-edit:hover {
+            background: var(--accent-cyan);
+            color: var(--bg-primary);
+        }
+
+        .btn-toggle {
+            background: rgba(34, 197, 94, 0.15);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+            color: var(--accent-green);
+        }
+
+        .btn-toggle:hover {
+            background: var(--accent-green);
+            color: var(--bg-primary);
+        }
+
+        .btn-delete {
+            background: rgba(239, 68, 68, 0.15);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: var(--accent-red);
+        }
+
+        .btn-delete:hover {
+            background: var(--accent-red);
+            color: #fff;
+        }
+
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.95);
+            display: none;
+            align-items: flex-start;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity var(--transition-fast);
+            overflow-y: auto;
+            padding: 40px 20px;
+        }
+
+        .modal.show {
+            display: flex;
+            opacity: 1;
+        }
+
+        .modal-content {
+            width: 100%;
+            max-width: 700px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 40px;
+            position: relative;
+            backdrop-filter: blur(20px);
+            animation: slideDown 0.3s ease-out;
+        }
+
+        .modal-content::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--accent-orange), var(--accent-cyan), transparent);
+            opacity: 0.6;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 32px;
+            padding-bottom: 24px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .modal-title {
+            font-family: var(--font-display);
+            font-size: 28px;
+            letter-spacing: 2px;
+            color: var(--text-primary);
+        }
+
+        .modal-close {
+            width: 40px;
+            height: 40px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            color: var(--text-secondary);
+            font-size: 24px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all var(--transition-fast);
+        }
+
+        .modal-close:hover {
+            background: rgba(255, 107, 53, 0.1);
+            border-color: var(--accent-orange);
+            color: var(--accent-orange);
+            transform: rotate(90deg);
+        }
+
+        .modal-body {
+            max-height: calc(90vh - 200px);
+            overflow-y: auto;
+        }
+
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            margin-top: 32px;
+            padding-top: 24px;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .form-group {
+            margin-bottom: 24px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 14px 18px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            color: var(--text-primary);
+            font-family: var(--font-body);
+            font-size: 14px;
+            transition: all var(--transition-fast);
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--accent-orange);
+            background: rgba(255, 107, 53, 0.05);
+            box-shadow: 0 0 0 4px rgba(255, 107, 53, 0.1);
+        }
+
+        .form-input::placeholder {
+            color: var(--text-muted);
+        }
+
+        select.form-input {
+            cursor: pointer;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%238888a0' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 16px center;
+            padding-right: 40px;
+        }
+
+        select.form-input option {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            padding: 12px;
+        }
+
+        textarea.form-input {
+            min-height: 100px;
+            resize: vertical;
+            line-height: 1.7;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .checkbox-group input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            accent-color: var(--accent-orange);
+            cursor: pointer;
+        }
+
+        .checkbox-group span {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        .form-hint {
+            margin-top: 12px;
+            padding: 16px;
+            background: rgba(0, 212, 255, 0.08);
+            border: 1px solid rgba(0, 212, 255, 0.2);
+            border-radius: var(--radius-md);
+            font-size: 12px;
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
+        .form-hint strong {
+            color: var(--accent-cyan);
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 40px;
+            right: 40px;
+            padding: 20px 28px;
+            border-radius: var(--radius-md);
+            font-size: 14px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all var(--transition-smooth);
+            z-index: 2000;
+            backdrop-filter: blur(20px);
+        }
+
+        .toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        .toast-success {
+            background: rgba(34, 197, 94, 0.15);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+            color: var(--accent-green);
+        }
+
+        .toast-error {
+            background: rgba(239, 68, 68, 0.15);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: var(--accent-red);
+        }
+
+        .usage-section {
+            margin-bottom: 28px;
+        }
+
+        .usage-section h3 {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--accent-orange);
+            margin-bottom: 12px;
+        }
+
+        .usage-section p {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+            line-height: 1.7;
+        }
+
+        .usage-section ul {
+            margin: 12px 0;
+            padding-left: 24px;
+            color: var(--text-secondary);
+            font-size: 14px;
+            line-height: 1.8;
+        }
+
+        .usage-section li {
+            margin-bottom: 8px;
+        }
+
+        .code-block {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 16px;
+            font-family: var(--font-mono);
+            font-size: 13px;
+            color: var(--text-secondary);
+            overflow-x: auto;
+            margin: 12px 0;
+            line-height: 1.6;
+        }
+
+        @media (max-width: 1024px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+
+            .sidebar.open {
+                transform: translateX(0);
+            }
+
+            .main-content {
+                margin-left: 0;
+            }
+
+            .container {
+                padding: 24px;
+            }
+
+            .page-title {
+                font-size: 42px;
+            }
+
+            .page-header {
+                flex-direction: column;
+                gap: 24px;
+            }
+
+            .header-actions {
+                width: 100%;
+            }
+
+            .header-actions .btn {
+                flex: 1;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 16px;
+            }
+
+            .page-title {
+                font-size: 32px;
+            }
+
+            .module-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .modal-content {
+                padding: 24px;
+            }
+
+            .modal-title {
+                font-size: 24px;
+            }
+
+            .module-actions {
+                flex-wrap: wrap;
+            }
+
+            .module-actions .btn {
+                flex: 1;
+                min-width: calc(50% - 5px);
+            }
+
+            .toast {
+                left: 16px;
+                right: 16px;
+                bottom: 16px;
+            }
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-secondary);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        ::selection {
+            background: rgba(255, 107, 53, 0.3);
+            color: var(--text-primary);
+        }
+    </style>
+</head>
+<body>
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="logo">
+                <div class="logo-icon">🎬</div>
+                <span class="logo-text">CINESCOPE</span>
+            </div>
+        </div>
+        <nav class="nav-menu">
+            <div class="nav-section">
+                <div class="nav-section-title">主要功能</div>
+                <a href="/" class="nav-item">
+                    <span class="nav-icon">🎯</span>
+                    <span>分析主页</span>
+                </a>
+                <a href="/history" class="nav-item">
+                    <span class="nav-icon">📋</span>
+                    <span>历史记录</span>
+                </a>
+                <a href="/modules" class="nav-item active">
+                    <span class="nav-icon">🧩</span>
+                    <span>模块管理</span>
+                </a>
+            </div>
+            <div class="nav-section">
+                <div class="nav-section-title">系统设置</div>
+                <a href="/settings" class="nav-item">
+                    <span class="nav-icon">⚙️</span>
+                    <span>模型配置</span>
+                </a>
+                <a href="/get_cookies" class="nav-item">
+                    <span class="nav-icon">🍪</span>
+                    <span>Cookies</span>
+                </a>
+            </div>
+        </nav>
+    </aside>
+
+    <main class="main-content">
+        <div class="container">
+            <header class="page-header">
+                <div>
+                    <h1 class="page-title">MODULES</h1>
+                    <p class="page-subtitle">管理分析模块，配置提示词模板和输出关键词</p>
+                </div>
+                <div class="header-actions">
+                    <button class="btn btn-secondary" id="usage-guide-btn">
+                        <span>📖</span>
+                        <span>使用说明</span>
+                    </button>
+                    <button class="btn btn-primary" id="add-module-btn">
+                        <span>➕</span>
+                        <span>添加模块</span>
+                    </button>
+                </div>
+            </header>
+
+            <div class="module-grid" id="module-grid">
+            </div>
+        </div>
+    </main>
+
+    <div class="modal" id="edit-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">EDIT MODULE</h2>
+                <button class="modal-close" id="close-edit-modal">×</button>
+            </div>
+            <div class="modal-body">
+                <form id="edit-form">
+                    <input type="hidden" id="edit-module-id">
+                    <div class="form-group">
+                        <label class="form-label">模块名称</label>
+                        <input type="text" class="form-input" id="edit-module-name" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">模块描述</label>
+                        <textarea class="form-input" id="edit-module-description"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">模块类型</label>
+                        <select class="form-input" id="edit-module-type" required>
+                            <option value="video_analysis">视频分析</option>
+                            <option value="image_analysis">图像分析</option>
+                            <option value="text_analysis">文本分析</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">启用状态</label>
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="edit-module-enabled">
+                            <span>启用此模块</span>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">输入提示词模板</label>
+                        <textarea class="form-input" id="edit-input-prompt" placeholder="你是专业的{module_name}分析师。根据以下内容，分析：&#10;{output_keywords}"></textarea>
+                        <div class="form-hint">
+                            <strong>可用参数：</strong><br>
+                            播放：{play} | 点赞：{like} | 评论：{comment} | 收藏：{collect} | 分享：{share} | 时长：{duration}s<br>
+                            标题：{desc} | 视频：{video_path} | 关键帧图片：{frames_path} | 话题标签：{hashtag_names} | 评论：{comments}<br>
+                            输出关键词：{output_keywords} | 模块名称：{module_name} | 分析文本：{text}
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">输出关键词（每行一个）</label>
+                        <textarea class="form-input" id="edit-output-keywords" placeholder="主题与受众&#10;情绪节奏与爆点&#10;文案钩子"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="cancel-edit">取消</button>
+                <button class="btn btn-primary" id="save-edit">保存修改</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="add-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">ADD MODULE</h2>
+                <button class="modal-close" id="close-add-modal">×</button>
+            </div>
+            <div class="modal-body">
+                <form id="add-form">
+                    <div class="form-group">
+                        <label class="form-label">模块ID</label>
+                        <input type="text" class="form-input" id="add-module-id" required placeholder="例如：content_analysis">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">模块名称</label>
+                        <input type="text" class="form-input" id="add-module-name" required placeholder="例如：内容分析">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">模块描述</label>
+                        <textarea class="form-input" id="add-module-description" placeholder="分析视频内容、主题、受众等"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">模块类型</label>
+                        <select class="form-input" id="add-module-type" required>
+                            <option value="video_analysis">视频分析</option>
+                            <option value="image_analysis">图像分析</option>
+                            <option value="text_analysis">文本分析</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">启用状态</label>
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="add-module-enabled" checked>
+                            <span>启用此模块</span>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">输入提示词模板</label>
+                        <textarea class="form-input" id="add-input-prompt" placeholder="你是专业的{module_name}分析师。根据以下内容，分析：&#10;{output_keywords}"></textarea>
+                        <div class="form-hint">
+                            <strong>可用参数：</strong><br>
+                            播放：{play} | 点赞：{like} | 评论：{comment} | 收藏：{collect} | 分享：{share} | 时长：{duration}s<br>
+                            标题：{desc} | 视频：{video_path} | 关键帧图片：{frames_path} | 话题标签：{hashtag_names} | 评论：{comments}<br>
+                            输出关键词：{output_keywords} | 模块名称：{module_name} | 分析文本：{text}
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">输出关键词（每行一个）</label>
+                        <textarea class="form-input" id="add-output-keywords" placeholder="主题与受众&#10;情绪节奏与爆点&#10;文案钩子"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="cancel-add">取消</button>
+                <button class="btn btn-primary" id="save-add">添加模块</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="usage-modal">
+        <div class="modal-content" style="max-width: 800px;">
+            <div class="modal-header">
+                <h2 class="modal-title">USAGE GUIDE</h2>
+                <button class="modal-close" id="close-usage-modal">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="usage-section">
+                    <h3>一、输入提示词（Input Prompt Template）</h3>
+                    <p><strong>作用：</strong>指导大模型进行分析的核心指令模板，定义了分析的目标、范围和具体要求。</p>
+                    <p><strong>用法：</strong>在模板中使用 <code>{参数名}</code> 的形式插入动态参数，例如：</p>
+                    <div class="code-block">你是专业的{module_name}分析师，请根据以下视频数据和关键帧图片，分析：
+{output_keywords}
+
+视频信息：
+- 播放量：{play} | 点赞数：{like} | 评论数：{comment}
+- 时长：{duration}s
+- 标题：{desc}</div>
+                </div>
+
+                <div class="usage-section">
+                    <h3>二、输出提示词（Output Keywords）</h3>
+                    <p><strong>作用：</strong>指定大模型分析时需要覆盖的核心维度，确保分析结果的全面性和结构化。</p>
+                    <p><strong>用法：</strong>每行输入一个关键词，例如：</p>
+                    <div class="code-block">主题与受众
+情绪节奏与爆点
+文案钩子
+爆款逻辑
+优化建议</div>
+                </div>
+
+                <div class="usage-section">
+                    <h3>三、可用参数</h3>
+                    <ul>
+                        <li><strong>基本统计参数：</strong>播放：{play} | 点赞：{like} | 评论：{comment} | 收藏：{collect} | 分享：{share} | 时长：{duration}s</li>
+                        <li><strong>视频内容参数：</strong>标题：{desc} | 视频：{video_path} | 关键帧图片：{frames_path} | 话题标签：{hashtag_names} | 评论：{comments}</li>
+                        <li><strong>模板参数：</strong>输出关键词：{output_keywords} | 模块名称：{module_name} | 分析文本：{text}</li>
+                    </ul>
+                </div>
+
+                <div class="usage-section">
+                    <h3>四、实际使用示例</h3>
+                    <ul>
+                        <li><strong>配置输入提示词模板：</strong>编写包含参数的模板，指导大模型分析方向。</li>
+                        <li><strong>配置输出关键词：</strong>定义需要覆盖的分析维度。</li>
+                        <li><strong>分析过程：</strong>系统会替换参数，生成完整指令，大模型根据指令生成分析结果。</li>
+                    </ul>
+                </div>
+
+                <div class="usage-section">
+                    <h3>五、注意事项</h3>
+                    <ul>
+                        <li>确保模板中的参数与实际可用参数一致</li>
+                        <li>提示词应清晰、具体，明确分析目标和要求</li>
+                        <li>输出关键词应覆盖所有重要的分析维度</li>
+                        <li>根据实际分析效果，调整提示词模板和关键词</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" id="close-usage-btn">关闭</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast">
+        <span class="toast-icon"></span>
+        <span class="toast-message"></span>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            loadModules();
+
+            document.getElementById('add-module-btn').addEventListener('click', showAddModal);
+            document.getElementById('usage-guide-btn').addEventListener('click', showUsageModal);
+            document.getElementById('close-edit-modal').addEventListener('click', hideEditModal);
+            document.getElementById('close-add-modal').addEventListener('click', hideAddModal);
+            document.getElementById('close-usage-modal').addEventListener('click', hideUsageModal);
+            document.getElementById('close-usage-btn').addEventListener('click', hideUsageModal);
+            document.getElementById('cancel-edit').addEventListener('click', hideEditModal);
+            document.getElementById('cancel-add').addEventListener('click', hideAddModal);
+            document.getElementById('save-edit').addEventListener('click', saveEdit);
+            document.getElementById('save-add').addEventListener('click', saveAdd);
+
+            document.getElementById('edit-modal').addEventListener('click', function(e) {
+                if (e.target === this) hideEditModal();
+            });
+            document.getElementById('add-modal').addEventListener('click', function(e) {
+                if (e.target === this) hideAddModal();
+            });
+            document.getElementById('usage-modal').addEventListener('click', function(e) {
+                if (e.target === this) hideUsageModal();
+            });
+        });
+
+        function loadModules() {
+            fetch('/api/modules')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        renderModules(data.modules);
+                    } else {
+                        showToast('加载模块失败', 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading modules:', error);
+                    showToast('加载模块失败', 'error');
+                });
+        }
+
+        function renderModules(modules) {
+            const grid = document.getElementById('module-grid');
+            grid.innerHTML = '';
+
+            modules.forEach((module, index) => {
+                const card = document.createElement('div');
+                card.className = 'module-card';
+                card.style.animationDelay = `${index * 0.1}s`;
+
+                card.innerHTML = `
+                    <div class="module-header">
+                        <h3 class="module-title">${module.name}</h3>
+                        <div class="module-status ${module.enabled ? 'enabled' : 'disabled'}">
+                            ${module.enabled ? '✓ 已启用' : '✗ 已禁用'}
+                        </div>
+                    </div>
+                    <div class="module-type">${getModuleTypeText(module.type)}</div>
+                    <div class="module-description">${module.description}</div>
+                    <div class="module-actions">
+                        <button class="btn btn-sm btn-edit" onclick="showEditModal('${module.id}')">✏️ 编辑</button>
+                        <button class="btn btn-sm btn-toggle" onclick="toggleModule('${module.id}')">${module.enabled ? '⏸️ 禁用' : '▶️ 启用'}</button>
+                        <button class="btn btn-sm btn-delete" onclick="deleteModule('${module.id}')">🗑️ 删除</button>
+                    </div>
+                `;
+
+                grid.appendChild(card);
+            });
+        }
+
+        function getModuleTypeText(type) {
+            switch(type) {
+                case 'video_analysis': return '🎬 视频分析';
+                case 'image_analysis': return '🖼️ 图像分析';
+                case 'text_analysis': return '📝 文本分析';
+                default: return type;
+            }
+        }
+
+        function showEditModal(moduleId) {
+            fetch(`/api/modules/${moduleId}/config`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        const module = data.config;
+                        document.getElementById('edit-module-id').value = moduleId;
+                        document.getElementById('edit-module-name').value = module.name || '';
+                        document.getElementById('edit-module-description').value = module.description || '';
+                        document.getElementById('edit-module-type').value = module.type || 'text_analysis';
+                        document.getElementById('edit-module-enabled').checked = module.enabled || false;
+                        document.getElementById('edit-input-prompt').value = module.config?.input_prompt_template || '';
+                        document.getElementById('edit-output-keywords').value = (module.config?.output_keywords || []).join('\n');
+                        document.getElementById('edit-modal').classList.add('show');
+                    } else {
+                        showToast('加载模块配置失败', 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading module config:', error);
+                    showToast('加载模块配置失败', 'error');
+                });
+        }
+
+        function hideEditModal() {
+            document.getElementById('edit-modal').classList.remove('show');
+        }
+
+        function showAddModal() {
+            document.getElementById('add-form').reset();
+            document.getElementById('add-modal').classList.add('show');
+        }
+
+        function hideAddModal() {
+            document.getElementById('add-modal').classList.remove('show');
+        }
+
+        function showUsageModal() {
+            document.getElementById('usage-modal').classList.add('show');
+        }
+
+        function hideUsageModal() {
+            document.getElementById('usage-modal').classList.remove('show');
+        }
+
+        function saveEdit() {
+            const moduleId = document.getElementById('edit-module-id').value;
+            const config = {
+                name: document.getElementById('edit-module-name').value,
+                description: document.getElementById('edit-module-description').value,
+                type: document.getElementById('edit-module-type').value,
+                enabled: document.getElementById('edit-module-enabled').checked,
+                config: {
+                    input_prompt_template: document.getElementById('edit-input-prompt').value,
+                    output_keywords: document.getElementById('edit-output-keywords').value.split('\n').filter(line => line.trim())
+                }
+            };
+
+            fetch(`/api/modules/${moduleId}/config`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ config: config.config })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    hideEditModal();
+                    loadModules();
+                    showToast('模块配置更新成功', 'success');
+                } else {
+                    showToast('更新模块配置失败', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error updating module config:', error);
+                showToast('更新模块配置失败', 'error');
+            });
+        }
+
+        function saveAdd() {
+            const moduleId = document.getElementById('add-module-id').value;
+            const config = {
+                id: moduleId,
+                name: document.getElementById('add-module-name').value,
+                description: document.getElementById('add-module-description').value,
+                type: document.getElementById('add-module-type').value,
+                enabled: document.getElementById('add-module-enabled').checked,
+                config: {
+                    input_prompt_template: document.getElementById('add-input-prompt').value,
+                    output_keywords: document.getElementById('add-output-keywords').value.split('\n').filter(line => line.trim())
+                }
+            };
+
+            fetch('/api/modules', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ id: moduleId, config: config })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    hideAddModal();
+                    loadModules();
+                    showToast('模块添加成功', 'success');
+                } else {
+                    showToast('添加模块失败', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error adding module:', error);
+                showToast('添加模块失败', 'error');
+            });
+        }
+
+        function toggleModule(moduleId) {
+            fetch(`/api/modules/${moduleId}/toggle`, {
+                method: 'POST'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    loadModules();
+                    showToast('模块状态更新成功', 'success');
+                } else {
+                    showToast('更新模块状态失败', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error toggling module:', error);
+                showToast('更新模块状态失败', 'error');
+            });
+        }
+
+        function deleteModule(moduleId) {
+            if (confirm('确定要删除这个模块吗？')) {
+                fetch(`/api/modules/${moduleId}`, {
+                    method: 'DELETE'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        loadModules();
+                        showToast('模块删除成功', 'success');
+                    } else {
+                        showToast('删除模块失败', 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error deleting module:', error);
+                    showToast('删除模块失败', 'error');
+                });
+            }
+        }
+
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            const icon = type === 'success' ? '✅' : '❌';
+            toast.querySelector('.toast-icon').textContent = icon;
+            toast.querySelector('.toast-message').textContent = message;
+            toast.className = `toast toast-${type} show`;
+
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+
+        const sidebar = document.getElementById('sidebar');
+        let touchStartX = 0;
+
+        document.addEventListener('touchstart', e => {
+            touchStartX = e.touches[0].clientX;
+        });
+
+        document.addEventListener('touchend', e => {
+            const touchEndX = e.changedTouches[0].clientX;
+            const diff = touchEndX - touchStartX;
+
+            if (diff > 50 && touchStartX < 50) {
+                sidebar.classList.add('open');
+            } else if (diff < -50) {
+                sidebar.classList.remove('open');
+            }
+        });
+    </script>
+</body>
+</html>

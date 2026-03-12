@@ -1,0 +1,1671 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CineScope · 视频拉片分析</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #05050a;
+            --bg-secondary: #0a0a12;
+            --bg-card: rgba(15, 15, 25, 0.8);
+            --bg-card-hover: rgba(20, 20, 35, 0.95);
+            --text-primary: #f0f0f5;
+            --text-secondary: #8888a0;
+            --text-muted: #555570;
+            --accent-orange: #ff6b35;
+            --accent-cyan: #00d4ff;
+            --accent-purple: #a855f7;
+            --accent-green: #22c55e;
+            --border-color: rgba(255, 255, 255, 0.08);
+            --border-glow: rgba(255, 107, 53, 0.3);
+            --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
+            --shadow-md: 0 8px 32px rgba(0, 0, 0, 0.4);
+            --shadow-lg: 0 16px 64px rgba(0, 0, 0, 0.5);
+            --shadow-glow: 0 0 40px rgba(255, 107, 53, 0.15);
+            --radius-sm: 6px;
+            --radius-md: 12px;
+            --radius-lg: 20px;
+            --transition-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+            --transition-smooth: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            --transition-bounce: 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+            --font-display: 'Bebas Neue', sans-serif;
+            --font-body: 'IBM Plex Sans', sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+            --sidebar-width: 260px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: var(--font-body);
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background:
+                radial-gradient(ellipse 80% 50% at 20% 40%, rgba(255, 107, 53, 0.08) 0%, transparent 50%),
+                radial-gradient(ellipse 60% 40% at 80% 60%, rgba(0, 212, 255, 0.06) 0%, transparent 50%),
+                radial-gradient(ellipse 100% 100% at 50% 0%, rgba(168, 85, 247, 0.04) 0%, transparent 40%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        body::after {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+            opacity: 0.03;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        @keyframes progressGlow {
+            0% { box-shadow: 0 0 10px rgba(0, 212, 255, 0.3); }
+            50% { box-shadow: 0 0 20px rgba(0, 212, 255, 0.5); }
+            100% { box-shadow: 0 0 10px rgba(0, 212, 255, 0.3); }
+        }
+
+        .layout {
+            display: flex;
+            min-height: 100vh;
+            position: relative;
+            z-index: 2;
+        }
+
+        aside {
+            width: var(--sidebar-width);
+            background: var(--bg-secondary);
+            border-right: 1px solid var(--border-color);
+            padding: 24px 0;
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            z-index: 100;
+        }
+
+        .logo {
+            padding: 0 24px 32px;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 24px;
+        }
+
+        .logo-icon {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo-icon img {
+            width: 40px;
+            height: 40px;
+        }
+
+        .logo-text {
+            font-family: var(--font-display);
+            font-size: 28px;
+            letter-spacing: 3px;
+            background: linear-gradient(135deg, var(--accent-orange), var(--accent-cyan));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .nav-menu {
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .nav-section {
+            padding: 0 16px;
+            margin-bottom: 24px;
+        }
+
+        .nav-section-title {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--text-muted);
+            padding: 0 12px;
+            margin-bottom: 12px;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            border-radius: var(--radius-md);
+            transition: all var(--transition-fast);
+            margin-bottom: 4px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .nav-item:hover {
+            background: var(--bg-card);
+            color: var(--text-primary);
+        }
+
+        .nav-item.active {
+            background: linear-gradient(135deg, rgba(255, 107, 53, 0.15), rgba(255, 107, 53, 0.05));
+            color: var(--accent-orange);
+            border: 1px solid rgba(255, 107, 53, 0.3);
+        }
+
+        .nav-icon {
+            font-size: 18px;
+            width: 24px;
+            text-align: center;
+        }
+
+        main {
+            flex: 1;
+            margin-left: var(--sidebar-width);
+            padding: 40px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .page-header {
+            margin-bottom: 40px;
+            animation: fadeInUp 0.6s ease-out;
+        }
+
+        .page-title {
+            font-family: var(--font-display);
+            font-size: 48px;
+            letter-spacing: 4px;
+            margin-bottom: 12px;
+            background: linear-gradient(135deg, var(--text-primary), var(--text-secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .page-subtitle {
+            color: var(--text-secondary);
+            font-size: 16px;
+            max-width: 600px;
+        }
+
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 32px;
+            margin-bottom: 24px;
+            backdrop-filter: blur(10px);
+            animation: fadeInUp 0.6s ease-out;
+            animation-fill-mode: both;
+        }
+
+        .card:nth-child(1) { animation-delay: 0.1s; }
+        .card:nth-child(2) { animation-delay: 0.2s; }
+        .card:nth-child(3) { animation-delay: 0.3s; }
+
+        .card-title {
+            font-family: var(--font-display);
+            font-size: 24px;
+            letter-spacing: 2px;
+            margin-bottom: 24px;
+            color: var(--accent-cyan);
+        }
+
+        .upload-zone {
+            border: 2px dashed var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 48px;
+            text-align: center;
+            cursor: pointer;
+            transition: all var(--transition-smooth);
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        .upload-zone:hover {
+            border-color: var(--accent-cyan);
+            background: rgba(0, 212, 255, 0.05);
+        }
+
+        .upload-zone.dragover {
+            border-color: var(--accent-cyan);
+            background: rgba(0, 212, 255, 0.1);
+            box-shadow: var(--shadow-glow);
+        }
+
+        .upload-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+        }
+
+        .upload-text {
+            color: var(--text-secondary);
+            font-size: 16px;
+            margin-bottom: 8px;
+        }
+
+        .upload-hint {
+            color: var(--text-muted);
+            font-size: 13px;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .form-group {
+            margin-bottom: 24px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            padding: 12px 16px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-color);
+            transition: all var(--transition-fast);
+        }
+
+        .checkbox-group:hover {
+            border-color: var(--accent-cyan);
+        }
+
+        .checkbox-group input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            accent-color: var(--accent-cyan);
+            cursor: pointer;
+        }
+
+        .checkbox-label {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 16px 32px;
+            font-family: var(--font-body);
+            font-size: 14px;
+            font-weight: 600;
+            border: none;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            transition: all var(--transition-smooth);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent-orange), #ff8f5a);
+            color: white;
+            box-shadow: 0 4px 20px rgba(255, 107, 53, 0.3);
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(255, 107, 53, 0.4);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-full {
+            width: 100%;
+        }
+
+        .progress-section {
+            display: none;
+            margin-top: 32px;
+            padding: 24px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-color);
+        }
+
+        .progress-section.active {
+            display: block;
+            animation: fadeInUp 0.4s ease-out;
+        }
+
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .progress-title {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .progress-percentage {
+            font-family: var(--font-mono);
+            font-size: 14px;
+            color: var(--accent-cyan);
+        }
+
+        .progress-bar {
+            height: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent-cyan), var(--accent-purple));
+            border-radius: 4px;
+            transition: width var(--transition-smooth);
+            animation: progressGlow 2s infinite;
+        }
+
+        .progress-message {
+            margin-top: 12px;
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .results-section {
+            display: none;
+        }
+
+        .results-section.active {
+            display: block;
+            animation: fadeInUp 0.4s ease-out;
+        }
+
+        .result-card {
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 24px;
+            margin-bottom: 16px;
+        }
+
+        .result-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .result-title {
+            font-weight: 600;
+            color: var(--accent-cyan);
+        }
+
+        .result-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            background: rgba(34, 197, 94, 0.2);
+            color: var(--accent-green);
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .stat-item {
+            text-align: center;
+            padding: 16px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: var(--radius-md);
+        }
+
+        .stat-value {
+            font-family: var(--font-display);
+            font-size: 32px;
+            color: var(--accent-cyan);
+            margin-bottom: 4px;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .shots-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 16px;
+            margin-top: 24px;
+        }
+
+        .shot-card {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 16px;
+            transition: all var(--transition-fast);
+            cursor: pointer;
+        }
+
+        .shot-card.clickable:hover {
+            border-color: var(--accent-purple);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(168, 85, 247, 0.2);
+        }
+
+        .shot-card.clickable::after {
+            content: '▶';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 24px;
+            color: white;
+            opacity: 0;
+            transition: opacity var(--transition-fast);
+            pointer-events: none;
+            text-shadow: 0 2px 8px rgba(0,0,0,0.5);
+        }
+
+        .shot-card.clickable:hover::after {
+            opacity: 0.8;
+        }
+
+        .shot-card {
+            position: relative;
+        }
+
+        .shot-card.clickable {
+            cursor: pointer;
+        }
+
+        .shot-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .shot-id {
+            font-family: var(--font-mono);
+            font-size: 14px;
+            color: var(--accent-cyan);
+        }
+
+        .shot-time {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .shot-badges {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .shot-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 500;
+        }
+
+        .shot-badge-type {
+            background: rgba(168, 85, 247, 0.2);
+            color: var(--accent-purple);
+        }
+
+        .shot-badge-camera {
+            background: rgba(0, 212, 255, 0.2);
+            color: var(--accent-cyan);
+        }
+
+        .shot-content {
+            font-size: 13px;
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+
+        .download-links {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-top: 24px;
+        }
+
+        .download-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 20px;
+            background: rgba(0, 212, 255, 0.1);
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            border-radius: var(--radius-md);
+            color: var(--accent-cyan);
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 500;
+            transition: all var(--transition-fast);
+        }
+
+        .download-link:hover {
+            background: rgba(0, 212, 255, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .upload-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            background: rgba(0, 212, 255, 0.1);
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            border-radius: var(--radius-md);
+            margin-bottom: 24px;
+        }
+
+        .upload-info-icon {
+            font-size: 24px;
+        }
+
+        .upload-info-text {
+            flex: 1;
+        }
+
+        .upload-info-name {
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .upload-info-size {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .upload-info-remove {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 18px;
+            padding: 4px;
+            transition: color var(--transition-fast);
+        }
+
+        .upload-info-remove:hover {
+            color: var(--accent-orange);
+        }
+
+        @media (max-width: 768px) {
+            aside {
+                width: 80px;
+                padding: 16px 0;
+            }
+
+            .logo-text, .nav-section-title, .nav-item span:last-child {
+                display: none;
+            }
+
+            .nav-item {
+                justify-content: center;
+                padding: 12px;
+            }
+
+            main {
+                margin-left: 80px;
+                padding: 20px;
+            }
+
+            .page-title {
+                font-size: 32px;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(8px);
+            z-index: 1000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            opacity: 0;
+            transition: opacity var(--transition-smooth);
+        }
+
+        .modal-overlay.active {
+            display: flex;
+            opacity: 1;
+        }
+
+        .modal-content {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            max-width: 800px;
+            width: 100%;
+            max-height: 90vh;
+            overflow: hidden;
+            transform: scale(0.9) translateY(20px);
+            transition: transform var(--transition-bounce);
+            box-shadow: 0 24px 80px rgba(0, 0, 0, 0.6), 0 0 1px rgba(255, 107, 53, 0.3);
+        }
+
+        .modal-overlay.active .modal-content {
+            transform: scale(1) translateY(0);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--border-color);
+            background: rgba(0, 0, 0, 0.3);
+        }
+
+        .modal-title {
+            font-family: var(--font-display);
+            font-size: 24px;
+            letter-spacing: 2px;
+            color: var(--accent-orange);
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 28px;
+            cursor: pointer;
+            padding: 4px;
+            line-height: 1;
+            transition: color var(--transition-fast);
+        }
+
+        .modal-close:hover {
+            color: var(--accent-orange);
+        }
+
+        .modal-body {
+            padding: 24px;
+            max-height: calc(90vh - 80px);
+            overflow-y: auto;
+        }
+
+        .modal-video-container {
+            position: relative;
+            width: 100%;
+            padding-top: 56.25%;
+            background: #000;
+            border-radius: var(--radius-md);
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+
+        .modal-video {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        .modal-video-placeholder {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, rgba(255, 107, 53, 0.1), rgba(0, 212, 255, 0.1));
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        .modal-shot-info {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        .modal-info-item {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: var(--radius-md);
+            padding: 16px;
+        }
+
+        .modal-info-label {
+            font-size: 11px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+        }
+
+        .modal-info-value {
+            font-size: 16px;
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+
+        .modal-info-value.cyan {
+            color: var(--accent-cyan);
+        }
+
+        .modal-info-value.purple {
+            color: var(--accent-purple);
+        }
+
+        .modal-content-section {
+            margin-top: 20px;
+        }
+
+        .modal-content-label {
+            font-size: 11px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 12px;
+        }
+
+        .modal-content-text {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: var(--radius-md);
+            padding: 16px;
+            color: var(--text-secondary);
+            line-height: 1.7;
+            font-size: 14px;
+        }
+
+        .modal-key-elements {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        .modal-key-element {
+            display: inline-block;
+            padding: 6px 12px;
+            background: rgba(34, 197, 94, 0.15);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+            border-radius: 20px;
+            font-size: 12px;
+            color: var(--accent-green);
+        }
+
+        @keyframes modalVideoFadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .modal-video.loaded {
+            animation: modalVideoFadeIn 0.3s ease-out;
+        }
+
+        .history-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 16px;
+            margin-top: 16px;
+        }
+
+        .history-card {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 16px;
+            cursor: pointer;
+            transition: all var(--transition-fast);
+        }
+
+        .history-card:hover {
+            border-color: var(--accent-cyan);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0, 212, 255, 0.15);
+        }
+
+        .history-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 12px;
+        }
+
+        .history-card-title {
+            font-weight: 600;
+            color: var(--text-primary);
+            font-size: 14px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            flex: 1;
+            margin-right: 8px;
+        }
+
+        .history-card-delete {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 4px;
+            font-size: 16px;
+            line-height: 1;
+            transition: color var(--transition-fast);
+            opacity: 0;
+        }
+
+        .history-card:hover .history-card-delete {
+            opacity: 1;
+        }
+
+        .history-card-delete:hover {
+            color: var(--accent-orange);
+        }
+
+        .history-card-time {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-bottom: 12px;
+        }
+
+        .history-card-stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+        }
+
+        .history-stat {
+            text-align: center;
+            padding: 8px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 6px;
+        }
+
+        .history-stat-value {
+            font-family: var(--font-mono);
+            font-size: 16px;
+            color: var(--accent-cyan);
+        }
+
+        .history-stat-label {
+            font-size: 10px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .history-card-badges {
+            display: flex;
+            gap: 6px;
+            margin-top: 12px;
+            flex-wrap: wrap;
+        }
+
+        .history-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 500;
+        }
+
+        .history-badge-type {
+            background: rgba(168, 85, 247, 0.2);
+            color: var(--accent-purple);
+        }
+
+        .history-badge-camera {
+            background: rgba(0, 212, 255, 0.2);
+            color: var(--accent-cyan);
+        }
+    </style>
+</head>
+<body>
+    <div class="layout">
+        <aside>
+            <div class="logo">
+                <div class="logo-icon">
+                    <span style="font-size: 32px;">🎬</span>
+                    <span class="logo-text">CINESCOPE</span>
+                </div>
+            </div>
+            <nav class="nav-menu">
+                <div class="nav-section">
+                    <div class="nav-section-title">主要功能</div>
+                    <a href="/" class="nav-item">
+                        <span class="nav-icon">🎯</span>
+                        <span>分析主页</span>
+                    </a>
+                    <a href="/lapian" class="nav-item active">
+                        <span class="nav-icon">🎬</span>
+                        <span>视频拉片</span>
+                    </a>
+                    <a href="/history" class="nav-item">
+                        <span class="nav-icon">📋</span>
+                        <span>历史记录</span>
+                    </a>
+                    <a href="/modules" class="nav-item">
+                        <span class="nav-icon">🧩</span>
+                        <span>模块管理</span>
+                    </a>
+                </div>
+                <div class="nav-section">
+                    <div class="nav-section-title">系统设置</div>
+                    <a href="/settings" class="nav-item">
+                        <span class="nav-icon">⚙️</span>
+                        <span>模型配置</span>
+                    </a>
+                    <a href="/get_cookies" class="nav-item">
+                        <span class="nav-icon">🍪</span>
+                        <span>Cookies</span>
+                    </a>
+                </div>
+            </nav>
+        </aside>
+
+        <main>
+            <header class="page-header">
+                <h1 class="page-title">VIDEO LAPIAN</h1>
+                <p class="page-subtitle">专业视频拉片分析工具，直接将视频提交给AI分析，识别镜头、景别、运镜方式，生成详细的分镜报告</p>
+            </header>
+
+            <div class="card">
+                <h2 class="card-title">选择视频</h2>
+                <div class="upload-zone" id="dropZone">
+                    <div class="upload-icon">📹</div>
+                    <div class="upload-text">拖拽视频文件到此处，或点击选择文件</div>
+                    <div class="upload-hint">支持 MP4, AVI, MKV, MOV, WMV, FLV, WebM 格式（建议文件小于20MB）</div>
+                    <input type="file" id="videoFile" class="file-input" accept="video/*,.mp4,.avi,.mkv,.mov,.wmv,.flv,.webm,.m4v">
+                </div>
+                <div class="upload-info" id="uploadInfo" style="display: none;">
+                    <span class="upload-info-icon">📁</span>
+                    <div class="upload-info-text">
+                        <div class="upload-info-name" id="fileName">filename.mp4</div>
+                        <div class="upload-info-size" id="fileSize">0 MB</div>
+                    </div>
+                    <button class="upload-info-remove" onclick="removeFile()">×</button>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2 class="card-title">分析选项</h2>
+                <label class="checkbox-group">
+                    <input type="checkbox" id="extractShots" checked>
+                    <span class="checkbox-label">启用镜头提取（自动提取每个镜头片段）</span>
+                </label>
+
+                <div style="margin-top: 32px;">
+                    <button class="btn btn-primary btn-full" id="submitBtn" onclick="startAnalysis()">
+                        🚀 开始拉片分析
+                    </button>
+                </div>
+            </div>
+
+            <div class="card" id="progressCard" style="display: none;">
+                <h2 class="card-title">分析进度</h2>
+                <div class="progress-section active">
+                    <div class="progress-header">
+                        <span class="progress-title">处理中...</span>
+                        <span class="progress-percentage" id="progressPercent">0%</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+                    </div>
+                    <div class="progress-message" id="progressMessage">正在初始化...</div>
+                </div>
+            </div>
+
+            <div class="card" id="resultsCard" style="display: none;">
+                <h2 class="card-title">分析结果</h2>
+                <div class="results-section active">
+                    <div class="result-card">
+                        <div class="result-header">
+                            <span class="result-title">📊 概览</span>
+                            <span class="result-badge">已完成</span>
+                        </div>
+                        <div class="stats-grid">
+                            <div class="stat-item">
+                                <div class="stat-value" id="totalShots">0</div>
+                                <div class="stat-label">镜头总数</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-value" id="totalDuration">0s</div>
+                                <div class="stat-label">总时长</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-value" id="avgDuration">0s</div>
+                                <div class="stat-label">平均镜头</div>
+                            </div>
+                        </div>
+                        <div class="stats-grid">
+                            <div class="stat-item">
+                                <div class="stat-value" id="mainShotType">-</div>
+                                <div class="stat-label">主要景别</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-value" id="mainCamera">-</div>
+                                <div class="stat-label">主要运镜</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-value" id="extractedCount">0</div>
+                                <div class="stat-label">已提取片段</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="shotsContainer"></div>
+
+                    <div class="download-links">
+                        <a class="download-link" id="downloadJson" href="#" target="_blank">
+                            📄 下载JSON报告
+                        </a>
+                        <a class="download-link" id="downloadMd" href="#" target="_blank">
+                            📝 下载Markdown报告
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card" id="historyCard">
+                <h2 class="card-title">📋 历史拉片记录</h2>
+                <div id="historyLoading" style="text-align: center; padding: 40px; color: var(--text-muted);">
+                    加载中...
+                </div>
+                <div class="history-grid" id="historyGrid" style="display: none;"></div>
+                <div id="historyEmpty" style="text-align: center; padding: 40px; color: var(--text-muted); display: none;">
+                    暂无历史记录
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div class="modal-overlay" id="shotModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span class="modal-title" id="modalTitle">镜头详情</span>
+                <button class="modal-close" onclick="closeModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="modal-video-container">
+                    <video class="modal-video" id="modalVideo" controls>
+                        您的浏览器不支持视频播放
+                    </video>
+                    <div class="modal-video-placeholder" id="modalVideoPlaceholder">
+                        正在加载视频片段...
+                    </div>
+                </div>
+                <div class="modal-shot-info">
+                    <div class="modal-info-item">
+                        <div class="modal-info-label">镜头编号</div>
+                        <div class="modal-info-value cyan" id="modalShotId">#1</div>
+                    </div>
+                    <div class="modal-info-item">
+                        <div class="modal-info-label">时间范围</div>
+                        <div class="modal-info-value" id="modalTimeRange">0s - 10s</div>
+                    </div>
+                    <div class="modal-info-item">
+                        <div class="modal-info-label">景别</div>
+                        <div class="modal-info-value purple" id="modalShotType">远景</div>
+                    </div>
+                    <div class="modal-info-item">
+                        <div class="modal-info-label">运镜方式</div>
+                        <div class="modal-info-value" id="modalCamera">固定</div>
+                    </div>
+                </div>
+                <div class="modal-content-section">
+                    <div class="modal-content-label">画面内容描述</div>
+                    <div class="modal-content-text" id="modalContent">
+                        视频内容描述...
+                    </div>
+                </div>
+                <div class="modal-content-section" id="modalKeyElementsSection">
+                    <div class="modal-content-label">关键元素</div>
+                    <div class="modal-key-elements" id="modalKeyElements"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let uploadedFilePath = '';
+        let uploadedFileName = '';
+        let uploadedFileSize = 0;
+        let currentShotsData = [];
+        let currentShotFiles = [];
+
+        const dropZone = document.getElementById('dropZone');
+        const videoFile = document.getElementById('videoFile');
+
+        dropZone.addEventListener('click', () => videoFile.click());
+
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('dragover');
+        });
+
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('dragover');
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFileUpload(files[0]);
+            }
+        });
+
+        videoFile.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFileUpload(e.target.files[0]);
+            }
+        });
+
+        function handleFileUpload(file) {
+            const allowedExts = ['mp4', 'avi', 'mkv', 'mov', 'wmv', 'flv', 'webm', 'm4v'];
+            const ext = file.name.split('.').pop().toLowerCase();
+
+            if (!allowedExts.includes(ext)) {
+                alert('不支持的文件格式，请上传视频文件');
+                return;
+            }
+
+            uploadedFileName = file.name;
+            uploadedFileSize = file.size;
+
+            const formData = new FormData();
+            formData.append('video', file);
+
+            document.getElementById('fileName').textContent = file.name;
+            document.getElementById('fileSize').textContent = formatFileSize(file.size);
+            document.getElementById('uploadInfo').style.display = 'flex';
+            document.getElementById('dropZone').style.display = 'none';
+
+            fetch('/api/lapian/upload', {
+                method: 'POST',
+                body: formData
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    uploadedFilePath = data.file_path;
+                } else {
+                    alert('上传失败: ' + data.error);
+                }
+            })
+            .catch(err => {
+                alert('上传失败: ' + err.message);
+            });
+        }
+
+        function removeFile() {
+            uploadedFilePath = '';
+            uploadedFileName = '';
+            uploadedFileSize = 0;
+            document.getElementById('uploadInfo').style.display = 'none';
+            document.getElementById('dropZone').style.display = 'block';
+            videoFile.value = '';
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+            return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+        }
+
+        async function startAnalysis() {
+            if (!uploadedFilePath) {
+                alert('请先上传视频文件');
+                return;
+            }
+
+            const extractShots = document.getElementById('extractShots').checked;
+
+            document.getElementById('submitBtn').disabled = true;
+            document.getElementById('progressCard').style.display = 'block';
+            document.getElementById('resultsCard').style.display = 'none';
+
+            const progressFill = document.getElementById('progressFill');
+            const progressPercent = document.getElementById('progressPercent');
+            const progressMessage = document.getElementById('progressMessage');
+
+            progressFill.style.width = '0%';
+            progressPercent.textContent = '0%';
+            progressMessage.textContent = '正在初始化...';
+
+            try {
+                const response = await fetch('/api/lapian/process', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        videoPath: uploadedFilePath,
+                        extractShots
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.error) {
+                    alert('处理失败: ' + result.error);
+                    document.getElementById('submitBtn').disabled = false;
+                    document.getElementById('progressCard').style.display = 'none';
+                    return;
+                }
+
+                progressFill.style.width = '100%';
+                progressPercent.textContent = '100%';
+                progressMessage.textContent = '分析完成!';
+
+                showResults(result);
+
+            } catch (err) {
+                alert('请求失败: ' + err.message);
+                document.getElementById('submitBtn').disabled = false;
+                document.getElementById('progressCard').style.display = 'none';
+            }
+        }
+
+        function showResults(result) {
+            document.getElementById('resultsCard').style.display = 'block';
+            document.getElementById('submitBtn').disabled = false;
+
+            const report = result.report || {};
+            const summary = report.summary || {};
+
+            document.getElementById('totalShots').textContent = summary.total_shots || 0;
+            document.getElementById('totalDuration').textContent = (summary.total_duration || 0) + 's';
+            document.getElementById('avgDuration').textContent = (summary.avg_shot_duration || 0) + 's';
+            document.getElementById('mainShotType').textContent = summary.main_shot_type || '-';
+            document.getElementById('mainCamera').textContent = summary.main_camera_movement || '-';
+            document.getElementById('extractedCount').textContent = result.steps?.extraction?.extracted_count || 0;
+
+            const taskId = result.task_id;
+            document.getElementById('downloadJson').href = `/api/lapian/download/${taskId}?filename=lapian_report.json`;
+            document.getElementById('downloadMd').href = `/api/lapian/download/${taskId}?filename=lapian_report.md`;
+
+            const shots = report.shots || [];
+            const shotFiles = result.shot_files || [];
+            
+            currentShotsData = shots;
+            currentShotFiles = shotFiles;
+
+            const shotsContainer = document.getElementById('shotsContainer');
+
+            if (shots.length > 0) {
+                let shotsHtml = `<div class="result-card">
+                    <div class="result-header">
+                        <span class="result-title">🎬 镜头详情</span>
+                        <span style="color: var(--text-muted); font-size: 13px;">点击卡片查看详情</span>
+                    </div>
+                    <div class="shots-grid">`;
+
+                shots.forEach((shot, index) => {
+                    const shotFileUrl = shotFiles[index] || '';
+                    const hasVideo = shotFileUrl.length > 0;
+                    
+                    shotsHtml += `
+                        <div class="shot-card ${hasVideo ? 'clickable' : ''}" onclick="${hasVideo ? 'openShotModal(' + index + ')' : ''}" ${!hasVideo ? 'style="cursor: default;"' : ''}>
+                            <div class="shot-header">
+                                <span class="shot-id">镜头 #${shot.shot_id}</span>
+                                <span class="shot-time">${shot.time_range}</span>
+                            </div>
+                            <div class="shot-badges">
+                                <span class="shot-badge shot-badge-type">${shot.shot_type}</span>
+                                <span class="shot-badge shot-badge-camera">${shot.camera_movement}</span>
+                            </div>
+                            <div class="shot-content">${shot.content || ''}</div>
+                        </div>
+                    `;
+                });
+
+                shotsHtml += `</div></div>`;
+                shotsContainer.innerHTML = shotsHtml;
+            } else {
+                shotsContainer.innerHTML = '';
+            }
+
+            document.getElementById('progressCard').style.display = 'none';
+        }
+
+        function openShotModal(index) {
+            const shot = currentShotsData[index];
+            const shotFileUrl = currentShotFiles[index];
+            
+            if (!shot) return;
+
+            document.getElementById('modalTitle').textContent = `镜头 #${shot.shot_id}`;
+            document.getElementById('modalShotId').textContent = `#${shot.shot_id}`;
+            document.getElementById('modalTimeRange').textContent = shot.time_range || `${shot.start_time}s - ${shot.end_time}s`;
+            document.getElementById('modalShotType').textContent = shot.shot_type || '-';
+            document.getElementById('modalCamera').textContent = shot.camera_movement || '-';
+            document.getElementById('modalContent').textContent = shot.content || '无内容描述';
+
+            const keyElements = shot.key_elements || [];
+            const keyElementsContainer = document.getElementById('modalKeyElements');
+            const keyElementsSection = document.getElementById('modalKeyElementsSection');
+            
+            if (keyElements.length > 0) {
+                keyElementsSection.style.display = 'block';
+                keyElementsContainer.innerHTML = keyElements.map(elem => 
+                    `<span class="modal-key-element">${elem}</span>`
+                ).join('');
+            } else {
+                keyElementsSection.style.display = 'none';
+            }
+
+            const video = document.getElementById('modalVideo');
+            const placeholder = document.getElementById('modalVideoPlaceholder');
+            
+            if (shotFileUrl) {
+                video.src = shotFileUrl;
+                video.style.display = 'block';
+                placeholder.style.display = 'none';
+                
+                video.onloadeddata = function() {
+                    this.classList.add('loaded');
+                };
+                
+                video.onerror = function() {
+                    video.style.display = 'none';
+                    placeholder.style.display = 'flex';
+                    placeholder.textContent = '视频加载失败';
+                };
+            } else {
+                video.style.display = 'none';
+                placeholder.style.display = 'flex';
+                placeholder.textContent = '该镜头无提取视频';
+            }
+
+            document.getElementById('shotModal').classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeModal() {
+            const video = document.getElementById('modalVideo');
+            video.pause();
+            video.src = '';
+            document.getElementById('shotModal').classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        document.getElementById('shotModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeModal();
+            }
+        });
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeModal();
+            }
+        });
+
+        setInterval(async () => {
+            if (!uploadedFilePath || document.getElementById('submitBtn').disabled === false) return;
+
+            try {
+                const response = await fetch('/api/progress');
+                const progressData = await response.json();
+
+                if (progressData.percentage) {
+                    document.getElementById('progressFill').style.width = progressData.percentage + '%';
+                    document.getElementById('progressPercent').textContent = progressData.percentage + '%';
+                    document.getElementById('progressMessage').textContent = progressData.status || '处理中...';
+                }
+            } catch (e) {}
+        }, 1000);
+
+        loadHistoryRecords();
+
+        async function loadHistoryRecords() {
+            try {
+                const response = await fetch('/api/lapian/history?limit=20');
+                const data = await response.json();
+                
+                document.getElementById('historyLoading').style.display = 'none';
+                
+                if (data.success && data.records && data.records.length > 0) {
+                    renderHistoryRecords(data.records);
+                } else {
+                    document.getElementById('historyEmpty').style.display = 'block';
+                }
+            } catch (e) {
+                document.getElementById('historyLoading').style.display = 'none';
+                document.getElementById('historyEmpty').style.display = 'block';
+            }
+        }
+
+        function renderHistoryRecords(records) {
+            const grid = document.getElementById('historyGrid');
+            grid.style.display = 'grid';
+            
+            let html = '';
+            records.forEach(record => {
+                const createdAt = new Date(record.created_at).toLocaleString('zh-CN', {
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+                
+                html += `
+                    <div class="history-card" onclick="loadHistoryRecord(${record.id})">
+                        <div class="history-card-header">
+                            <div class="history-card-title" title="${record.video_name || '未知'}">${record.video_name || '未知'}</div>
+                            <button class="history-card-delete" data-id="${record.id}">×</button>
+                        </div>
+                        <div class="history-card-time">${createdAt}</div>
+                        <div class="history-card-stats">
+                            <div class="history-stat">
+                                <div class="history-stat-value">${record.total_shots || 0}</div>
+                                <div class="history-stat-label">镜头数</div>
+                            </div>
+                            <div class="history-stat">
+                                <div class="history-stat-value">${(record.total_duration || 0).toFixed(1)}s</div>
+                                <div class="history-stat-label">时长</div>
+                            </div>
+                        </div>
+                        <div class="history-card-badges">
+                            ${record.main_shot_type ? `<span class="history-badge history-badge-type">${record.main_shot_type}</span>` : ''}
+                            ${record.main_camera_movement ? `<span class="history-badge history-badge-camera">${record.main_camera_movement}</span>` : ''}
+                        </div>
+                    </div>
+                `;
+            });
+            
+            grid.innerHTML = html;
+        }
+
+        async function loadHistoryRecord(recordId) {
+            try {
+                const response = await fetch(`/api/lapian/record/${recordId}`);
+                const data = await response.json();
+                
+                if (data.success && data.record) {
+                    showHistoryRecord(data.record);
+                } else {
+                    alert('加载记录失败');
+                }
+            } catch (e) {
+                alert('加载记录失败: ' + e.message);
+            }
+        }
+
+        function showHistoryRecord(record) {
+            const report = record.report_data || {};
+            const summary = report.summary || {};
+            const shots = record.shots_data || [];
+            const shotFiles = record.shot_files || [];
+            
+            document.getElementById('totalShots').textContent = summary.total_shots || record.total_shots || 0;
+            document.getElementById('totalDuration').textContent = (summary.total_duration || record.total_duration || 0) + 's';
+            document.getElementById('avgDuration').textContent = (summary.avg_shot_duration || 0) + 's';
+            document.getElementById('mainShotType').textContent = summary.main_shot_type || record.main_shot_type || '-';
+            document.getElementById('mainCamera').textContent = summary.main_camera_movement || record.main_camera_movement || '-';
+            document.getElementById('extractedCount').textContent = shotFiles.length;
+            
+            const taskId = record.task_id;
+            document.getElementById('downloadJson').href = `/api/lapian/download/${taskId}?filename=lapian_report.json`;
+            document.getElementById('downloadMd').href = `/api/lapian/download/${taskId}?filename=lapian_report.md`;
+            
+            currentShotsData = shots;
+            currentShotFiles = shotFiles;
+            
+            const shotsContainer = document.getElementById('shotsContainer');
+            
+            if (shots.length > 0) {
+                let shotsHtml = `<div class="result-card">
+                    <div class="result-header">
+                        <span class="result-title">🎬 镜头详情</span>
+                        <span style="color: var(--text-muted); font-size: 13px;">点击卡片查看详情</span>
+                    </div>
+                    <div class="shots-grid">`;
+                
+                shots.forEach((shot, index) => {
+                    const shotFileUrl = shotFiles[index] || '';
+                    const hasVideo = shotFileUrl.length > 0;
+                    
+                    shotsHtml += `
+                        <div class="shot-card ${hasVideo ? 'clickable' : ''}" onclick="${hasVideo ? 'openShotModal(' + index + ')' : ''}" ${!hasVideo ? 'style="cursor: default;"' : ''}>
+                            <div class="shot-header">
+                                <span class="shot-id">镜头 #${shot.shot_id}</span>
+                                <span class="shot-time">${shot.time_range || (shot.start_time + 's - ' + shot.end_time + 's')}</span>
+                            </div>
+                            <div class="shot-badges">
+                                <span class="shot-badge shot-badge-type">${shot.shot_type}</span>
+                                <span class="shot-badge shot-badge-camera">${shot.camera_movement}</span>
+                            </div>
+                            <div class="shot-content">${shot.content || ''}</div>
+                        </div>
+                    `;
+                });
+                
+                shotsHtml += `</div></div>`;
+                shotsContainer.innerHTML = shotsHtml;
+            } else {
+                shotsContainer.innerHTML = '';
+            }
+            
+            document.getElementById('resultsCard').style.display = 'block';
+            document.getElementById('resultsCard').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        async function deleteHistoryRecord(event, recordId) {
+            event.stopPropagation();
+            if (!confirm('确定要删除这条记录吗？')) return;
+            
+            try {
+                const response = await fetch(`/api/lapian/record/${recordId}`, {
+                    method: 'DELETE'
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    loadHistoryRecords();
+                } else {
+                    alert('删除失败: ' + data.error);
+                }
+            } catch (e) {
+                alert('删除失败: ' + e.message);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('historyGrid').addEventListener('click', function(e) {
+                const deleteBtn = e.target.closest('.history-card-delete');
+                if (deleteBtn) {
+                    const recordId = deleteBtn.getAttribute('data-id');
+                    if (recordId) {
+                        deleteHistoryRecord(e, parseInt(recordId));
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>
