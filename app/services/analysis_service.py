@@ -26,16 +26,8 @@ def init_llm(api_key, base_url, model_name):
             logger.info("大语言模型初始化成功")
         else:
             logger.warning("大语言模型未初始化：请设置API密钥")
-            llm = None
     except Exception as e:
         logger.error(f"大语言模型初始化失败：{e}")
-        llm = None
-
-def get_llm_instance():
-    global llm
-    if llm is None:
-        llm = module_manager.get_llm()
-    return llm
 
 def process_video(url, path, data_file, video_dir, stats, results, frame_interval=2, video_title=None, video_data_json=None, enabled_modules=None, max_frames=15):
     logger.info(f"开始处理视频: {url}")
@@ -256,11 +248,11 @@ def process_video(url, path, data_file, video_dir, stats, results, frame_interva
         
         results = {}
         
-        current_llm = get_llm_instance()
-        if current_llm is None:
+        # 检查 llm 是否初始化
+        if not llm:
             logger.error("大语言模型未初始化，无法进行分析")
             for mid in module_ids:
-                results[mid] = "分析失败: 大语言模型未初始化，请检查 API_KEY 配置"
+                results[mid] = "分析失败：大语言模型未初始化，请配置 API 密钥"
             return results
         
         if module_type == 'video_analysis' and module_ids:
@@ -268,10 +260,12 @@ def process_video(url, path, data_file, video_dir, stats, results, frame_interva
             logger.info(f"合并分析视频模块: {module_ids}")
             
             try:
-                result, _ = current_llm.analyze_video_directly(path, merged_prompt, save_result=False)
+                result, _ = llm.analyze_video_directly(path, merged_prompt, save_result=False)
                 results = parse_merged_result(result, module_ids)
             except Exception as e:
+                import traceback
                 logger.error(f"合并视频分析失败: {e}")
+                logger.error(traceback.format_exc())
                 for mid in module_ids:
                     results[mid] = f"分析失败: {str(e)}"
                     
@@ -281,13 +275,15 @@ def process_video(url, path, data_file, video_dir, stats, results, frame_interva
             
             try:
                 if frames:
-                    result, _ = current_llm.analyze_image(frames[0], merged_prompt, save_result=False)
+                    result, _ = llm.analyze_image(frames[0], merged_prompt, save_result=False)
                     results = parse_merged_result(result, module_ids)
                 else:
                     for mid in module_ids:
                         results[mid] = "无关键帧可供分析"
             except Exception as e:
+                import traceback
                 logger.error(f"合并图片分析失败: {e}")
+                logger.error(traceback.format_exc())
                 for mid in module_ids:
                     results[mid] = f"分析失败: {str(e)}"
                     
@@ -296,10 +292,12 @@ def process_video(url, path, data_file, video_dir, stats, results, frame_interva
             logger.info(f"合并分析文本模块: {module_ids}")
             
             try:
-                result, _ = current_llm.analyze_text(text, merged_prompt, save_result=False)
+                result, _ = llm.analyze_text(text, merged_prompt, save_result=False)
                 results = parse_merged_result(result, module_ids)
             except Exception as e:
+                import traceback
                 logger.error(f"合并文本分析失败: {e}")
+                logger.error(traceback.format_exc())
                 for mid in module_ids:
                     results[mid] = f"分析失败: {str(e)}"
         

@@ -39,14 +39,6 @@ class ModuleManager:
             if hasattr(module, 'set_llm'):
                 module.set_llm(llm)
     
-    def get_llm(self):
-        """获取大语言模型实例
-        
-        Returns:
-            大语言模型实例
-        """
-        return self.llm
-    
     def get_module(self, module_id):
         """获取模块实例
         
