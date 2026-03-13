@@ -1271,6 +1271,14 @@
                 }
             });
 
+            document.getElementById('fileName').textContent = file.name;
+            document.getElementById('fileSize').textContent = formatFileSize(file.size);
+            document.getElementById('uploadInfo').style.display = 'flex';
+            document.getElementById('dropZone').style.display = 'none';
+            document.getElementById('progressCard').style.display = 'block';
+            document.getElementById('progressFill').style.width = '0%';
+            document.getElementById('progressPercent').textContent = '0%';
+
             xhr.addEventListener('load', () => {
                 console.log('[上传] 完成, 状态:', xhr.status);
                 if (xhr.status === 200) {
