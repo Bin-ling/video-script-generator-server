@@ -1300,8 +1300,14 @@
             uploadedFilePath = '';
             uploadedFileName = '';
             uploadedFileSize = 0;
+            uploadedTaskId = '';
+            
             document.getElementById('uploadInfo').style.display = 'none';
             document.getElementById('dropZone').style.display = 'block';
+            document.getElementById('progressCard').style.display = 'none';
+            document.getElementById('progressFill').style.width = '0%';
+            document.getElementById('progressPercent').textContent = '0%';
+            
             videoFile.value = '';
         }
 
