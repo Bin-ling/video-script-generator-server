@@ -7,11 +7,14 @@ from database import lapian_db
 
 def upload_lapian_video():
     try:
-        if 'file' not in request.files:
-            return jsonify({'success': False, 'error': 'No file provided'})
+        # 支持 'file' 和 'video' 两种字段名
+        file = request.files.get('file') or request.files.get('video')
+        if not file:
+            print(f"[调试] 收到的文件列表: {list(request.files.keys())}")
+            return jsonify({'success': False, 'error': '没有上传文件，请选择文件'}), 400
         
-        file = request.files['file']
-        if file.filename == '':
+        filename = file.filename
+        if not filename or filename == '':
             return jsonify({'success': False, 'error': 'No file selected'})
         
         if not file.filename.endswith(('.mp4', '.avi', '.mov', '.wmv')):
