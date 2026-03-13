@@ -6,9 +6,8 @@ import json
 import shutil
 from database import lapian_db
 from app.utils.logger import logger
-from modules.video_processor.processor import get_video_info, extract_frames
 from modules.utils.file_utils import create_output_folder
-from modules.analysis.analyzer import LargeLanguageModel
+from modules.lapian.main import VideoLapianTool
 from config_manager import config_manager
 
 def upload_lapian_video():
@@ -36,15 +35,14 @@ def upload_lapian_video():
         file.save(video_path)
         logger.info(f"[拉片上传] 视频保存到: {video_path}")
         
-        video_info = get_video_info(video_path)
-        logger.info(f"[拉片上传] 视频信息: {video_info}")
+        file_size = os.path.getsize(video_path) / (1024 * 1024)
+        logger.info(f"[拉片上传] 视频大小: {file_size:.2f} MB")
         
         record_id = lapian_db.insert_lapian({
             'task_id': task_id,
             'filename': filename,
             'video_path': video_path,
             'output_dir': output_dir,
-            'duration': video_info.get('duration', 0),
             'status': 'uploaded'
         })
         
@@ -54,10 +52,12 @@ def upload_lapian_video():
             'file_path': video_path,
             'output_dir': output_dir,
             'record_id': record_id,
-            'video_info': video_info
+            'file_size': file_size
         })
     except Exception as e:
         logger.error(f"[拉片上传] 上传失败: {str(e)}")
+        import traceback
+        traceback.print_exc()
         return jsonify({'success': False, 'error': str(e)}), 500
 
 def process_lapian():
@@ -79,40 +79,44 @@ def process_lapian():
         
         output_dir = os.path.dirname(video_path)
         
-        video_info = get_video_info(video_path)
-        logger.info(f"[拉片处理] 视频信息: {video_info}")
+        lapian_db.update_lapian(task_id, {'status': 'processing'})
         
-        frames = []
-        if extract_shots:
-            frames_dir = os.path.join(output_dir, 'frames')
-            os.makedirs(frames_dir, exist_ok=True)
+        lapian_tool = VideoLapianTool()
+        result = lapian_tool.process(video_path, output_dir, extract_shots=extract_shots)
+        
+        logger.info(f"[拉片处理] 处理结果: {result.get('status')}")
+        
+        if result.get('status') == 'completed':
+            report = result.get('report', {})
+            shots = report.get('shots', [])
             
-            logger.info(f"[拉片处理] 开始提取关键帧到: {frames_dir}")
-            frames = extract_frames(
-                video_path, 
-                interval=2, 
-                max_frames=50, 
-                output_dir=output_dir
-            )
-            logger.info(f"[拉片处理] 提取了 {len(frames)} 个关键帧")
-        
-        lapian_db.update_lapian(task_id, {
-            'status': 'processed',
-            'frames_count': len(frames),
-            'duration': video_info.get('duration', 0)
-        })
-        
-        return jsonify({
-            'success': True,
-            'message': 'Processing completed',
-            'video_info': video_info,
-            'frames_count': len(frames),
-            'output_dir': output_dir
-        })
+            lapian_db.update_lapian(task_id, {
+                'status': 'completed',
+                'total_shots': len(shots),
+                'total_duration': report.get('video_info', {}).get('duration', 0),
+                'shots_data': shots,
+                'report_data': report
+            })
+            
+            return jsonify({
+                'success': True,
+                'message': 'Processing completed',
+                'output_dir': output_dir,
+                'total_shots': len(shots),
+                'report_file': os.path.join(output_dir, 'lapian_report.json'),
+                'markdown_file': os.path.join(output_dir, 'lapian_report.md')
+            })
+        else:
+            error_msg = result.get('error', 'Unknown error')
+            lapian_db.update_lapian(task_id, {'status': 'failed'})
+            return jsonify({'success': False, 'error': error_msg}), 500
+            
     except Exception as e:
         logger.error(f"[拉片处理] 处理失败: {str(e)}")
         import traceback
         traceback.print_exc()
+        if task_id:
+            lapian_db.update_lapian(task_id, {'status': 'failed'})
         return jsonify({'success': False, 'error': str(e)}), 500
 
 def get_lapian_status(task_id):
@@ -121,7 +125,7 @@ def get_lapian_status(task_id):
         if record:
             return jsonify({
                 'status': record.get('status', 'unknown'),
-                'progress': 100 if record.get('status') == 'processed' else 0
+                'progress': 100 if record.get('status') == 'completed' else 50 if record.get('status') == 'processing' else 0
             })
         return jsonify({
             'status': 'not_found',
@@ -135,10 +139,24 @@ def get_lapian_result(task_id):
     try:
         record = lapian_db.get_lapian_by_task_id(task_id)
         if record:
-            return jsonify({
+            output_dir = record.get('output_dir')
+            result = {
                 'success': True,
                 'record': record
-            })
+            }
+            
+            if output_dir:
+                report_file = os.path.join(output_dir, 'lapian_report.json')
+                if os.path.exists(report_file):
+                    with open(report_file, 'r', encoding='utf-8') as f:
+                        result['report'] = json.load(f)
+                
+                md_file = os.path.join(output_dir, 'lapian_report.md')
+                if os.path.exists(md_file):
+                    with open(md_file, 'r', encoding='utf-8') as f:
+                        result['markdown'] = f.read()
+            
+            return jsonify(result)
         return jsonify({'success': False, 'error': 'Record not found'}), 404
     except Exception as e:
         logger.error(f"[拉片结果] 获取结果失败: {str(e)}")
@@ -156,7 +174,19 @@ def get_lapian_record(record_id):
     try:
         record = lapian_db.get_lapian_by_id(record_id)
         if record:
-            return jsonify({'success': True, 'record': record})
+            output_dir = record.get('output_dir')
+            result = {
+                'success': True,
+                'record': record
+            }
+            
+            if output_dir:
+                report_file = os.path.join(output_dir, 'lapian_report.json')
+                if os.path.exists(report_file):
+                    with open(report_file, 'r', encoding='utf-8') as f:
+                        result['report'] = json.load(f)
+            
+            return jsonify(result)
         return jsonify({'success': False, 'error': 'Record not found'}), 404
     except Exception as e:
         logger.error(f"[拉片记录] 获取记录失败: {str(e)}")
