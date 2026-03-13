@@ -1258,7 +1258,7 @@
             uploadedFileSize = file.size;
 
             const formData = new FormData();
-            formData.append('video', file);
+            formData.append('file', file);
 
             document.getElementById('fileName').textContent = file.name;
             document.getElementById('fileSize').textContent = formatFileSize(file.size);
@@ -1322,7 +1322,7 @@
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        videoPath: uploadedFilePath,
+                        file_path: uploadedFilePath,
                         extractShots
                     })
                 });
