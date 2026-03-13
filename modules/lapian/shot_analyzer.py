@@ -360,21 +360,19 @@ class ShotAnalyzer:
         if len(all_shots) > 0:
             print(f"JSON解析成功! 共{len(all_shots)}个镜头")
         else:
-            print(f"JSON解析失败")
-            result["raw_result"] = "解析失败"
+            print(f"JSON解析失败，保存原始响应用于调试")
+            result["raw_result"] = result_text if result_text else "AI返回为空"
         
         print("视频分析完成!")
 
         if save_result and output_dir:
-            # 保存原始响应（如果需要）
             raw_output_path = os.path.join(output_dir, 'ai_raw_response.txt')
             try:
                 with open(raw_output_path, 'w', encoding='utf-8') as f:
-                    f.write(json.dumps(result, ensure_ascii=False, indent=2))
+                    f.write(result_text if result_text else "AI返回为空")
             except:
                 pass
             
-            # 保存解析后的结果
             output_path = os.path.join(output_dir, 'direct_analysis_result.json')
             self.save_analysis_result(result, output_path)
 
