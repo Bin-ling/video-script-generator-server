@@ -1,33 +1,23 @@
+"""
+拉片模块配置
+"""
+
 import os
-import shutil
+import sys
 
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+# 添加项目根目录到路径
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
-FFMPEG_PATH = os.path.join(os.path.dirname(BASE_DIR), 'FFmpeg', 'ffmpeg.exe')
-FFPROBE_PATH = os.path.join(os.path.dirname(BASE_DIR), 'FFmpeg', 'ffprobe.exe')
+from modules.utils.ffmpeg_config import (
+    FFMPEG_PATH, FFPROBE_PATH,
+    DEFAULT_FRAME_FPS, DEFAULT_AUDIO_SAMPLE_RATE, DEFAULT_AUDIO_CHANNELS,
+    SHOT_TYPES, CAMERA_MOVEMENTS,
+    print_ffmpeg_info
+)
 
-if not os.path.exists(FFMPEG_PATH):
-    found = shutil.which('ffmpeg')
-    if found:
-        FFMPEG_PATH = found
-    else:
-        FFMPEG_PATH = 'ffmpeg'
-        
-if not os.path.exists(FFPROBE_PATH):
-    found = shutil.which('ffprobe')
-    if found:
-        FFPROBE_PATH = found
-    else:
-        FFPROBE_PATH = 'ffprobe'
-
-DEFAULT_FRAME_FPS = 0.5
-DEFAULT_AUDIO_SAMPLE_RATE = 16000
-DEFAULT_AUDIO_CHANNELS = 1
-
-SHOT_TYPES = [
-    "全景", "中景", "近景", "特写", "大特写", "远景", "中近景"
-]
-
-CAMERA_MOVEMENTS = [
-    "固定", "推镜", "拉镜", "摇镜", "跟镜", "移镜", "升降", "环绕", "甩镜"
+__all__ = [
+    'FFMPEG_PATH', 'FFPROBE_PATH',
+    'DEFAULT_FRAME_FPS', 'DEFAULT_AUDIO_SAMPLE_RATE', 'DEFAULT_AUDIO_CHANNELS',
+    'SHOT_TYPES', 'CAMERA_MOVEMENTS',
+    'print_ffmpeg_info'
 ]

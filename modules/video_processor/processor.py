@@ -2,34 +2,12 @@ import subprocess
 import os
 import json
 import time
+import sys
 
+# 添加项目根目录到路径
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
-def get_ffmpeg_path():
-    """获取 FFmpeg 可执行文件路径
-    
-    Returns:
-        str: FFmpeg 可执行文件路径
-    """
-    # 尝试从上级目录的 FFmpeg 文件夹获取
-    ffmpeg_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'FFmpeg', 'ffmpeg.exe')
-    if not os.path.exists(ffmpeg_path):
-        # 尝试直接使用系统路径中的 ffmpeg
-        ffmpeg_path = 'ffmpeg'
-    return ffmpeg_path
-
-
-def get_ffprobe_path():
-    """获取 FFprobe 可执行文件路径
-    
-    Returns:
-        str: FFprobe 可执行文件路径
-    """
-    # 尝试从上级目录的 FFmpeg 文件夹获取
-    ffprobe_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'FFmpeg', 'ffprobe.exe')
-    if not os.path.exists(ffprobe_path):
-        # 尝试直接使用系统路径中的 ffprobe
-        ffprobe_path = 'ffprobe'
-    return ffprobe_path
+from modules.utils.ffmpeg_config import get_ffmpeg_path, get_ffprobe_path, check_ffmpeg
 
 
 def get_video_info(path):
