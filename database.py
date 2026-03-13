@@ -252,8 +252,12 @@ class LapianDatabase:
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             task_id TEXT UNIQUE,
             video_name TEXT,
+            filename TEXT,
             video_path TEXT,
             output_dir TEXT,
+            status TEXT DEFAULT 'uploaded',
+            frames_count INTEGER DEFAULT 0,
+            duration REAL DEFAULT 0,
             total_shots INTEGER,
             total_duration REAL,
             main_shot_type TEXT,
@@ -264,6 +268,23 @@ class LapianDatabase:
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
         ''')
+        
+        try:
+            cursor.execute('ALTER TABLE lapian_records ADD COLUMN filename TEXT')
+        except:
+            pass
+        try:
+            cursor.execute('ALTER TABLE lapian_records ADD COLUMN status TEXT DEFAULT "uploaded"')
+        except:
+            pass
+        try:
+            cursor.execute('ALTER TABLE lapian_records ADD COLUMN frames_count INTEGER DEFAULT 0')
+        except:
+            pass
+        try:
+            cursor.execute('ALTER TABLE lapian_records ADD COLUMN duration REAL DEFAULT 0')
+        except:
+            pass
         
         cursor.execute('CREATE INDEX IF NOT EXISTS idx_lapian_created_at ON lapian_records(created_at)')
         cursor.execute('CREATE INDEX IF NOT EXISTS idx_lapian_task_id ON lapian_records(task_id)')
@@ -278,15 +299,20 @@ class LapianDatabase:
             
             cursor.execute('''
             INSERT OR REPLACE INTO lapian_records (
-                task_id, video_name, video_path, output_dir, total_shots,
+                task_id, video_name, filename, video_path, output_dir, status,
+                frames_count, duration, total_shots,
                 total_duration, main_shot_type, main_camera_movement,
                 shots_data, report_data, shot_files
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ''', (
                 data.get('task_id'),
-                data.get('video_name'),
+                data.get('video_name', data.get('filename', '')),
+                data.get('filename', ''),
                 data.get('video_path'),
                 data.get('output_dir'),
+                data.get('status', 'uploaded'),
+                data.get('frames_count', 0),
+                data.get('duration', 0),
                 data.get('total_shots', 0),
                 data.get('total_duration', 0),
                 data.get('main_shot_type', ''),
@@ -307,7 +333,8 @@ class LapianDatabase:
             cursor = conn.cursor()
             
             cursor.execute('''
-            SELECT id, task_id, video_name, total_shots, total_duration,
+            SELECT id, task_id, video_name, filename, status, frames_count, duration,
+                   total_shots, total_duration,
                    main_shot_type, main_camera_movement, created_at
             FROM lapian_records 
             ORDER BY created_at DESC
@@ -320,11 +347,15 @@ class LapianDatabase:
                     'id': row[0],
                     'task_id': row[1],
                     'video_name': row[2],
-                    'total_shots': row[3],
-                    'total_duration': row[4],
-                    'main_shot_type': row[5],
-                    'main_camera_movement': row[6],
-                    'created_at': row[7]
+                    'filename': row[3],
+                    'status': row[4],
+                    'frames_count': row[5],
+                    'duration': row[6],
+                    'total_shots': row[7],
+                    'total_duration': row[8],
+                    'main_shot_type': row[9],
+                    'main_camera_movement': row[10],
+                    'created_at': row[11]
                 })
             
             conn.close()
@@ -345,16 +376,20 @@ class LapianDatabase:
                     'id': row[0],
                     'task_id': row[1],
                     'video_name': row[2],
-                    'video_path': row[3],
-                    'output_dir': row[4],
-                    'total_shots': row[5],
-                    'total_duration': row[6],
-                    'main_shot_type': row[7],
-                    'main_camera_movement': row[8],
-                    'shots_data': json.loads(row[9]) if row[9] else [],
-                    'report_data': json.loads(row[10]) if row[10] else {},
-                    'shot_files': json.loads(row[11]) if row[11] else [],
-                    'created_at': row[12]
+                    'filename': row[3] if len(row) > 3 else '',
+                    'video_path': row[4] if len(row) > 4 else row[3],
+                    'output_dir': row[5] if len(row) > 5 else row[4],
+                    'status': row[6] if len(row) > 6 else 'uploaded',
+                    'frames_count': row[7] if len(row) > 7 else 0,
+                    'duration': row[8] if len(row) > 8 else 0,
+                    'total_shots': row[9] if len(row) > 9 else row[5],
+                    'total_duration': row[10] if len(row) > 10 else row[6],
+                    'main_shot_type': row[11] if len(row) > 11 else row[7],
+                    'main_camera_movement': row[12] if len(row) > 12 else row[8],
+                    'shots_data': json.loads(row[13]) if len(row) > 13 and row[13] else [],
+                    'report_data': json.loads(row[14]) if len(row) > 14 and row[14] else {},
+                    'shot_files': json.loads(row[15]) if len(row) > 15 and row[15] else [],
+                    'created_at': row[16] if len(row) > 16 else row[12]
                 }
                 conn.close()
                 return record
@@ -377,16 +412,20 @@ class LapianDatabase:
                     'id': row[0],
                     'task_id': row[1],
                     'video_name': row[2],
-                    'video_path': row[3],
-                    'output_dir': row[4],
-                    'total_shots': row[5],
-                    'total_duration': row[6],
-                    'main_shot_type': row[7],
-                    'main_camera_movement': row[8],
-                    'shots_data': json.loads(row[9]) if row[9] else [],
-                    'report_data': json.loads(row[10]) if row[10] else {},
-                    'shot_files': json.loads(row[11]) if row[11] else [],
-                    'created_at': row[12]
+                    'filename': row[3] if len(row) > 3 else '',
+                    'video_path': row[4] if len(row) > 4 else row[3],
+                    'output_dir': row[5] if len(row) > 5 else row[4],
+                    'status': row[6] if len(row) > 6 else 'uploaded',
+                    'frames_count': row[7] if len(row) > 7 else 0,
+                    'duration': row[8] if len(row) > 8 else 0,
+                    'total_shots': row[9] if len(row) > 9 else row[5],
+                    'total_duration': row[10] if len(row) > 10 else row[6],
+                    'main_shot_type': row[11] if len(row) > 11 else row[7],
+                    'main_camera_movement': row[12] if len(row) > 12 else row[8],
+                    'shots_data': json.loads(row[13]) if len(row) > 13 and row[13] else [],
+                    'report_data': json.loads(row[14]) if len(row) > 14 and row[14] else {},
+                    'shot_files': json.loads(row[15]) if len(row) > 15 and row[15] else [],
+                    'created_at': row[16] if len(row) > 16 else row[12]
                 }
                 conn.close()
                 return record
@@ -394,30 +433,43 @@ class LapianDatabase:
             conn.close()
             return None
     
-    def update_lapian(self, record_id, data):
+    def update_lapian(self, task_id, data):
         with self._lock:
             conn = sqlite3.connect(self.db_path)
             cursor = conn.cursor()
             
+            if 'status' in data:
+                cursor.execute('''
+                UPDATE lapian_records SET status = ? WHERE task_id = ?
+                ''', (data.get('status'), task_id))
+            
+            if 'frames_count' in data or 'duration' in data:
+                cursor.execute('''
+                UPDATE lapian_records SET 
+                    frames_count = COALESCE(?, frames_count),
+                    duration = COALESCE(?, duration)
+                WHERE task_id = ?
+                ''', (data.get('frames_count'), data.get('duration'), task_id))
+            
             cursor.execute('''
             UPDATE lapian_records SET
-                total_shots = ?,
-                total_duration = ?,
-                main_shot_type = ?,
-                main_camera_movement = ?,
-                shots_data = ?,
-                report_data = ?,
-                shot_files = ?
-            WHERE id = ?
+                total_shots = COALESCE(?, total_shots),
+                total_duration = COALESCE(?, total_duration),
+                main_shot_type = COALESCE(?, main_shot_type),
+                main_camera_movement = COALESCE(?, main_camera_movement),
+                shots_data = COALESCE(?, shots_data),
+                report_data = COALESCE(?, report_data),
+                shot_files = COALESCE(?, shot_files)
+            WHERE task_id = ?
             ''', (
-                data.get('total_shots', 0),
-                data.get('total_duration', 0),
-                data.get('main_shot_type', ''),
-                data.get('main_camera_movement', ''),
-                json.dumps(data.get('shots_data', [])),
-                json.dumps(data.get('report_data', {})),
-                json.dumps(data.get('shot_files', [])),
-                record_id
+                data.get('total_shots'),
+                data.get('total_duration'),
+                data.get('main_shot_type'),
+                data.get('main_camera_movement'),
+                json.dumps(data.get('shots_data', [])) if data.get('shots_data') else None,
+                json.dumps(data.get('report_data', {})) if data.get('report_data') else None,
+                json.dumps(data.get('shot_files', [])) if data.get('shot_files') else None,
+                task_id
             ))
             
             affected_rows = cursor.rowcount
