@@ -39,3 +39,13 @@ logs/
 output/
 static/frames/
 video_downloads/
+
+# 忽略FFmpeg工具目录（文件过大）
+ffmpeg-8.0.1-essentials_build/
+ffmpeg-8.0.1/
+FFmpeg/
+
+# 忽略压缩包
+*.zip
+*.tar.xz
+*.tar.gz
