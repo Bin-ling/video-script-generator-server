@@ -1272,7 +1272,7 @@
             .then(res => res.json())
             .then(data => {
                 if (data.success) {
-                    uploadedFilePath = data.file_path;
+                    uploadedFilePath = data.file_path || data.video_path;
                 } else {
                     alert('上传失败: ' + data.error);
                 }
