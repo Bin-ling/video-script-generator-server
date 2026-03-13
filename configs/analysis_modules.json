@@ -1,4 +1,3 @@
-# Analysis Modules Configuration
 {
   "modules": {
     "content_analysis": {
@@ -8,8 +7,20 @@
       "type": "video_analysis",
       "enabled": true,
       "config": {
-        "input_prompt_template": "你是专业的{module_name}分析师。根据以下视频内容和关键帧信息，分析：\n{output_keywords}",
-        "output_keywords": ["主题与受众", "情绪节奏与爆点", "文案钩子", "爆款逻辑", "优化建议"]
+        "input_prompt_template": "\"你是拥有5年+短视频内容策略操盘经验的资深专家，需深度拆解视频分镜（切换逻辑、景别运用）、构图（对称/三分/引导线等法则）、色彩（主色调/情绪表达）；结合视频主题分析受众匹配度、情绪节奏、文案钩子、爆款逻辑，输出可落地的优化建议，每个维度需附同赛道爆款案例支撑。\"",
+        "output_keywords": [
+          "分镜设计",
+          "构图方式",
+          "色彩体系",
+          "受众匹配度",
+          "情绪节奏",
+          "文案钩子",
+          "爆款逻辑",
+          "优化建议",
+          "案例支撑"
+        ],
+        "video_path": "${output_dir}/video.mp4",
+        "frames_path": "${output_dir}/frames"
       }
     },
     "data_analysis": {
@@ -17,10 +28,18 @@
       "name": "数据表现",
       "description": "分析播放量、点赞、评论等数据",
       "type": "text_analysis",
-      "enabled": true,
+      "enabled": false,
       "config": {
-        "input_prompt_template": "播放：{play}  点赞：{like}  评论：{comment}  收藏：{collect}  分享：{share}  时长：{duration}s\n\n分析：\n{output_keywords}",
-        "output_keywords": ["数据评级", "互动率", "完播预估", "受众匹配", "优化方向"]
+        "input_prompt_template": "你是资深短视频数据分析师，基于播放{play}、点赞{like}、评论{comment}、收藏{collect}、分享{share}、时长{duration}s，计算互动率、预估完播率，对标同赛道均值给出数据评级；分析受众匹配度，明确优化方向，需附计算公式和行业参考值。",
+        "output_keywords": [
+          "互动率",
+          "完播率（预估）",
+          "数据评级",
+          "受众匹配度",
+          "计算公式",
+          "行业参考值",
+          "优化方向"
+        ]
       }
     },
     "script_analysis": {
@@ -28,10 +47,22 @@
       "name": "逐镜脚本",
       "description": "生成视频逐镜脚本",
       "type": "video_analysis",
-      "enabled": true,
+      "enabled": false,
       "config": {
-        "input_prompt_template": "你是专业的{module_name}分析师。根据以下视频内容和关键帧信息，生成逐镜脚本：\n{output_keywords}",
-        "output_keywords": ["逐镜脚本", "脚本节奏结构", "仿写脚本"]
+        "input_prompt_template": "你是资深短视频脚本策划师，基于视频内容和关键帧，生成含镜号、景别、运镜、时长、画面内容、台词/旁白、音效的精细化逐镜脚本；分析脚本节奏结构，仿写3版不同风格（快节奏/情感/干货）适配流量逻辑的脚本。",
+        "output_keywords": [
+          "镜号",
+          "景别",
+          "运镜",
+          "时长",
+          "画面内容",
+          "台词/旁白",
+          "音效",
+          "节奏结构",
+          "风格化脚本"
+        ],
+        "video_path": "${output_dir}/video.mp4",
+        "frames_path": "${output_dir}/frames"
       }
     },
     "storyboard_analysis": {
@@ -39,10 +70,21 @@
       "name": "分镜表",
       "description": "生成视频分镜表",
       "type": "video_analysis",
-      "enabled": true,
+      "enabled": false,
       "config": {
-        "input_prompt_template": "你是专业的{module_name}分析师。根据以下视频内容和关键帧信息，生成分镜表：\n{output_keywords}",
-        "output_keywords": ["分镜表"]
+        "input_prompt_template": "你是短视频分镜设计专家，结合视频内容和关键帧生成标准化分镜表（镜号、画面描述、景别、运镜、时长、视觉重点）；分镜表需兼顾视觉表现力和拍摄落地性，适配短视频快节奏特征",
+        "output_keywords": [
+          "镜号",
+          "画面描述",
+          "景别",
+          "运镜",
+          "时长",
+          "视觉重点",
+          "视觉表现力",
+          "落地性建议"
+        ],
+        "video_path": "${output_dir}/video.mp4",
+        "frames_path": "${output_dir}/frames"
       }
     },
     "photo_analysis": {
@@ -50,10 +92,18 @@
       "name": "摄影运镜",
       "description": "分析视频摄影运镜技巧",
       "type": "image_analysis",
-      "enabled": true,
+      "enabled": false,
       "config": {
-        "input_prompt_template": "你是专业的{module_name}分析师。分析以下帧画面的摄影运镜技巧：\n{output_keywords}",
-        "output_keywords": ["拍摄方案", "镜头类型", "构图方法", "光线运用"]
+        "input_prompt_template": "你是深耕短视频领域的影视摄影指导，针对视频关键帧拆解拍摄方案（设备/参数）、镜头类型（推/拉/摇/移等）、构图方法、光线运用；标注专业术语解释，结合画面诉求给出运镜优化建议。",
+        "output_keywords": [
+          "拍摄方案",
+          "镜头类型",
+          "构图方法",
+          "光线运用",
+          "术语解释",
+          "运镜优化建议"
+        ],
+        "frames_path": "${output_dir}/frames"
       }
     },
     "color_analysis": {
@@ -63,8 +113,17 @@
       "type": "image_analysis",
       "enabled": true,
       "config": {
-        "input_prompt_template": "你是专业的{module_name}分析师。分析以下帧画面的色彩风格：\n{output_keywords}",
-        "output_keywords": ["整体色彩风格", "画面色彩特征", "达芬奇仿色参数", "LUT 风格参考"]
+        "input_prompt_template": "你是专业影视调色师，分析视频关键帧的色彩风格（多巴胺/复古港风等）、色彩特征（色相/饱和度/明度）；给出达芬奇仿色具体参数（色温/曲线/色轮），推荐可商用LUT风格参考。",
+        "output_keywords": [
+          "色彩风格",
+          "色相",
+          "饱和度",
+          "明度",
+          "达芬奇参数",
+          "LUT参考",
+          "商用版权"
+        ],
+        "frames_path": "${output_dir}/frames"
       }
     },
     "bgm_analysis": {
@@ -72,10 +131,18 @@
       "name": "BGM推荐",
       "description": "推荐适合视频的背景音乐",
       "type": "text_analysis",
-      "enabled": true,
+      "enabled": false,
       "config": {
-        "input_prompt_template": "你是专业的{module_name}分析师。根据以下视频内容，推荐适合的背景音乐：\n{output_keywords}",
-        "output_keywords": ["匹配风格", "BGM 列表", "版权说明"]
+        "input_prompt_template": "你是短视频音乐选品专家，结合视频主题、情绪节奏、目标受众，推荐匹配风格+5-8首BGM（含歌手/适配片段）+版权说明（商用/授权渠道），兼顾热门度和适配性。",
+        "output_keywords": [
+          "BGM风格",
+          "歌曲名称",
+          "歌手",
+          "适配片段",
+          "版权类型",
+          "授权渠道",
+          "热门度"
+        ]
       }
     },
     "topic_analysis": {
@@ -85,8 +152,16 @@
       "type": "text_analysis",
       "enabled": true,
       "config": {
-        "input_prompt_template": "你是专业的{module_name}分析师。根据以下视频内容，分析选题并推荐相关高流量选题：\n{output_keywords}",
-        "output_keywords": ["高流量选题"]
+        "input_prompt_template": "你是短视频选题策略分析师，深度分析视频核心选题的流量潜力、受众痛点、差异化优势；基于平台近7天趋势，推荐10个高流量相关选题，标注核心卖点、目标受众、流量切入点。",
+        "output_keywords": [
+          "流量潜力",
+          "受众痛点",
+          "差异化优势",
+          "相关选题",
+          "核心卖点",
+          "目标受众",
+          "流量切入点"
+        ]
       }
     },
     "title_analysis": {
@@ -94,10 +169,16 @@
       "name": "标题生成",
       "description": "生成视频爆款标题",
       "type": "text_analysis",
-      "enabled": true,
+      "enabled": false,
       "config": {
-        "input_prompt_template": "你是专业的{module_name}分析师。根据以下视频内容，生成爆款标题：\n{output_keywords}",
-        "output_keywords": ["爆款标题"]
+        "input_prompt_template": "你是爆款短视频标题策划师，结合视频核心内容、受众痛点、平台算法规则，生成15-20条爆款标题（悬念/痛点/数字/情绪式）；每条标注核心钩子和适配平台（抖音/快手/视频号）。",
+        "output_keywords": [
+          "标题文案",
+          "钩子类型",
+          "适配平台",
+          "点击逻辑",
+          "风格分类（悬念/痛点等）"
+        ]
       }
     },
     "cover_analysis": {
@@ -105,10 +186,17 @@
       "name": "封面文案",
       "description": "生成视频封面文案",
       "type": "text_analysis",
-      "enabled": true,
+      "enabled": false,
       "config": {
-        "input_prompt_template": "你是专业的{module_name}分析师。根据以下视频内容，生成封面文案：\n{output_keywords}",
-        "output_keywords": ["封面文案"]
+        "input_prompt_template": "你是短视频封面策划专家，基于视频核心卖点生成10-15条封面文案（主文案+副标题）；文案≤15字、有视觉冲击力，适配不同版式，标注排版建议。",
+        "output_keywords": [
+          "主文案",
+          "副标题",
+          "视觉冲击力",
+          "版式适配",
+          "排版建议",
+          "字数控制"
+        ]
       }
     },
     "publish_time_analysis": {
@@ -118,9 +206,62 @@
       "type": "text_analysis",
       "enabled": true,
       "config": {
-        "input_prompt_template": "你是专业的{module_name}分析师。根据以下视频内容，分析最佳发布时间：\n{output_keywords}",
-        "output_keywords": ["最佳发布时间"]
+        "input_prompt_template": "你是短视频运营专家，结合视频目标受众画像（年龄/职业/活跃时段）、平台流量高峰、选题类型，分析最佳发布时间（精确到小时），给出时段测试、追热点调整策略。",
+        "output_keywords": [
+          "受众活跃时段",
+          "流量高峰时段",
+          "最佳发布时间（小时级）",
+          "测试策略",
+          "热点调整建议"
+        ]
       }
+    }
+  },
+  "analysis_modules": {
+    "video_analysis": {
+      "description": "视频分析模块",
+      "supported_formats": ["mp4", "avi", "mov", "mkv", "webm"],
+      "max_duration": 600,
+      "frame_extraction": {
+        "enabled": true,
+        "interval": 2,
+        "max_frames": 50,
+        "output_format": "jpg"
+      }
+    },
+    "image_analysis": {
+      "description": "图片分析模块",
+      "supported_formats": ["jpg", "jpeg", "png", "gif", "webp"],
+      "max_size": 10485760,
+      "resize_options": {
+        "enabled": false,
+        "max_width": 1920,
+        "max_height": 1080
+      }
+    },
+    "text_analysis": {
+      "description": "文本分析模块",
+      "max_text_length": 50000,
+      "language_support": ["zh-CN", "en-US"],
+      "chunk_size": 4000
+    }
+  },
+  "multimodal_settings": {
+    "enabled": true,
+    "parallel_processing": true,
+    "max_concurrent_tasks": 4,
+    "timeout": 300,
+    "retry_attempts": 3,
+    "retry_delay": 5,
+    "cache_enabled": true,
+    "cache_ttl": 3600,
+    "output_formats": ["json", "markdown", "html"],
+    "default_output_format": "json",
+    "api_settings": {
+      "request_timeout": 60,
+      "max_tokens": 4096,
+      "temperature": 0.7,
+      "top_p": 0.9
     }
   }
 }
