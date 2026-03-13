@@ -1213,6 +1213,7 @@
         let uploadedFilePath = '';
         let uploadedFileName = '';
         let uploadedFileSize = 0;
+        let uploadedTaskId = '';
         let currentShotsData = [];
         let currentShotFiles = [];
 
@@ -1273,6 +1274,8 @@
             .then(data => {
                 if (data.success) {
                     uploadedFilePath = data.file_path || data.video_path;
+                    uploadedTaskId = data.task_id || '';
+                    console.log('[上传] 文件路径:', uploadedFilePath, '任务ID:', uploadedTaskId);
                 } else {
                     alert('上传失败: ' + data.error);
                 }
