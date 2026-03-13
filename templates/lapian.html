@@ -1362,6 +1362,12 @@
         }
 
         async function startAnalysis() {
+            const submitBtn = document.getElementById('submitBtn');
+            if (submitBtn.disabled) {
+                alert('正在分析中，请稍候...');
+                return;
+            }
+            
             if (!uploadedFilePath) {
                 alert('请先上传视频文件');
                 return;
