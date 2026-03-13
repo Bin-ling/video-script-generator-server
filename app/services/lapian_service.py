@@ -27,7 +27,7 @@ def upload_lapian_video():
         return jsonify({
             'success': True,
             'task_id': task_id,
-            'video_path': video_path
+            'file_path': video_path
         })
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)})
