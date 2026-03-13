@@ -1362,18 +1362,22 @@
         }
 
         async function startAnalysis() {
+            console.log('[分析] 开始分析...');
             const submitBtn = document.getElementById('submitBtn');
             if (submitBtn.disabled) {
+                console.log('[分析] 按钮已禁用，正在分析中');
                 alert('正在分析中，请稍候...');
                 return;
             }
             
             if (!uploadedFilePath) {
+                console.log('[分析] 未上传文件');
                 alert('请先上传视频文件');
                 return;
             }
 
             const extractShots = document.getElementById('extractShots').checked;
+            console.log('[分析] 文件路径:', uploadedFilePath, '任务ID:', uploadedTaskId, '提取镜头:', extractShots);
 
             document.getElementById('submitBtn').disabled = true;
             document.getElementById('progressCard').style.display = 'block';
@@ -1388,6 +1392,7 @@
             progressMessage.textContent = '正在初始化...';
 
             try {
+                console.log('[分析] 发送请求到 /api/lapian/process');
                 const response = await fetch('/api/lapian/process', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -1398,9 +1403,12 @@
                     })
                 });
 
+                console.log('[分析] 响应状态:', response.status);
                 const result = await response.json();
+                console.log('[分析] 响应数据:', result);
 
                 if (result.error) {
+                    console.error('[分析] 处理失败:', result.error);
                     alert('处理失败: ' + result.error);
                     document.getElementById('submitBtn').disabled = false;
                     document.getElementById('progressCard').style.display = 'none';
@@ -1410,10 +1418,12 @@
                 progressFill.style.width = '100%';
                 progressPercent.textContent = '100%';
                 progressMessage.textContent = '分析完成!';
+                console.log('[分析] 分析完成，显示结果');
 
                 showResults(result);
 
             } catch (err) {
+                console.error('[分析] 请求失败:', err);
                 alert('请求失败: ' + err.message);
                 document.getElementById('submitBtn').disabled = false;
                 document.getElementById('progressCard').style.display = 'none';
