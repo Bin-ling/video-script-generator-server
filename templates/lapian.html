@@ -665,6 +665,31 @@
             color: var(--accent-orange);
         }
 
+        .upload-progress {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: var(--radius-md);
+            overflow: hidden;
+            position: relative;
+        }
+
+        .upload-progress-bar {
+            height: 32px;
+            background: linear-gradient(90deg, var(--accent-cyan), var(--accent-purple));
+            border-radius: var(--radius-md);
+            transition: width 0.3s ease;
+        }
+
+        .upload-progress-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-weight: 600;
+            font-size: 14px;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+        }
+
         @media (max-width: 768px) {
             aside {
                 width: 80px;
@@ -1068,6 +1093,10 @@
                     </div>
                     <button class="upload-info-remove" onclick="removeFile()">×</button>
                 </div>
+                <div class="upload-progress" id="uploadProgress" style="display: none; margin-top: 16px;">
+                    <div class="upload-progress-bar" id="uploadProgressBar" style="width: 0%;"></div>
+                    <div class="upload-progress-text" id="uploadProgressText">上传中... 0%</div>
+                </div>
             </div>
 
             <div class="card">
@@ -1247,6 +1276,7 @@
         });
 
         function handleFileUpload(file) {
+            console.log('开始上传文件:', file);
             const allowedExts = ['mp4', 'avi', 'mkv', 'mov', 'wmv', 'flv', 'webm', 'm4v'];
             const ext = file.name.split('.').pop().toLowerCase();
 
@@ -1258,48 +1288,58 @@
             uploadedFileName = file.name;
             uploadedFileSize = file.size;
 
-            const xhr = new XMLHttpRequest();
             const formData = new FormData();
             formData.append('file', file);
-
-            xhr.upload.addEventListener('progress', (e) => {
-                if (e.lengthComputable) {
-                    const percentComplete = Math.round((e.loaded / e.total) * 100);
-                    console.log('[上传] 进度: ' + percentComplete + '%');
-                    document.getElementById('progressPercent').textContent = percentComplete + '%';
-                    document.getElementById('progressFill').style.width = percentComplete + '%';
-                }
-            });
+            console.log('FormData 已创建，包含文件:', file.name);
 
             document.getElementById('fileName').textContent = file.name;
             document.getElementById('fileSize').textContent = formatFileSize(file.size);
             document.getElementById('uploadInfo').style.display = 'flex';
             document.getElementById('dropZone').style.display = 'none';
-            document.getElementById('progressCard').style.display = 'block';
-            document.getElementById('progressFill').style.width = '0%';
-            document.getElementById('progressPercent').textContent = '0%';
+            document.getElementById('uploadProgress').style.display = 'block';
+            document.getElementById('uploadProgressBar').style.width = '0%';
+            document.getElementById('uploadProgressText').textContent = '上传中... 0%';
 
-            xhr.addEventListener('load', () => {
-                console.log('[上传] 完成, 状态:', xhr.status);
-                if (xhr.status === 200) {
-                    const data = JSON.parse(xhr.responseText);
-                    
-                    if (data.success) {
-                        uploadedFilePath = data.file_path || data.video_path;
-                        uploadedTaskId = data.task_id || '';
-                        console.log('[上传] 文件路径:', uploadedFilePath, '任务ID:', uploadedTaskId);
-                    } else {
-                        alert('上传失败: ' + data.error);
-                    }
-                } else {
-                    alert('上传失败, 状态: ' + xhr.status);
+            const xhr = new XMLHttpRequest();
+            
+            xhr.upload.addEventListener('progress', (e) => {
+                if (e.lengthComputable) {
+                    const percentComplete = Math.round((e.loaded / e.total) * 100);
+                    document.getElementById('uploadProgressBar').style.width = percentComplete + '%';
+                    document.getElementById('uploadProgressText').textContent = '上传中... ' + percentComplete + '%';
                 }
             });
 
-            xhr.addEventListener('error', () => {
-                alert('上传失败: 网络错误');
+            xhr.addEventListener('load', () => {
+                console.log('收到响应，状态码:', xhr.status);
+                console.log('响应内容:', xhr.responseText);
+                if (xhr.status >= 200 && xhr.status < 300) {
+                    const data = JSON.parse(xhr.responseText);
+                    console.log('解析后的数据:', data);
+                    if (data.success) {
+                        uploadedFilePath = data.file_path;
+                        uploadedTaskId = data.task_id;
+                        document.getElementById('uploadProgressText').textContent = '上传成功！';
+                        setTimeout(() => {
+                            document.getElementById('uploadProgress').style.display = 'none';
+                        }, 1500);
+                    } else {
+                        alert('上传失败: ' + data.error);
+                        document.getElementById('uploadProgress').style.display = 'none';
+                    }
+                } else {
+                    alert('上传失败: HTTP ' + xhr.status);
+                    document.getElementById('uploadProgress').style.display = 'none';
+                }
             });
 
+            xhr.addEventListener('error', (e) => {
+                console.error('上传错误:', e);
+                alert('上传失败: 网络错误');
+                document.getElementById('uploadProgress').style.display = 'none';
+            });
+
+            console.log('发送请求到 /api/lapian/upload');
             xhr.open('POST', '/api/lapian/upload');
             xhr.send(formData);
         }
@@ -1309,13 +1349,9 @@
             uploadedFileName = '';
             uploadedFileSize = 0;
             uploadedTaskId = '';
-            
             document.getElementById('uploadInfo').style.display = 'none';
             document.getElementById('dropZone').style.display = 'block';
-            document.getElementById('progressCard').style.display = 'none';
-            document.getElementById('progressFill').style.width = '0%';
-            document.getElementById('progressPercent').textContent = '0%';
-            
+            document.getElementById('uploadProgress').style.display = 'none';
             videoFile.value = '';
         }
 
@@ -1350,7 +1386,8 @@
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        file_path: uploadedFilePath,
+                        video_path: uploadedFilePath,
+                        task_id: uploadedTaskId,
                         extractShots
                     })
                 });
