@@ -386,15 +386,24 @@ class LapianDatabase:
                     'total_duration': row[10] if len(row) > 10 else row[6],
                     'main_shot_type': row[11] if len(row) > 11 else row[7],
                     'main_camera_movement': row[12] if len(row) > 12 else row[8],
-                    'shots_data': json.loads(row[13]) if len(row) > 13 and row[13] else [],
-                    'report_data': json.loads(row[14]) if len(row) > 14 and row[14] else {},
-                    'shot_files': json.loads(row[15]) if len(row) > 15 and row[15] else [],
+                    'shots_data': self._safe_json_parse(row[13]) if len(row) > 13 else [],
+                    'report_data': self._safe_json_parse(row[14]) if len(row) > 14 else {},
+                    'shot_files': self._safe_json_parse(row[15]) if len(row) > 15 else [],
                     'created_at': row[16] if len(row) > 16 else row[12]
                 }
                 conn.close()
                 return record
             
             conn.close()
+            return None
+    
+    def _safe_json_parse(self, value):
+        """安全解析JSON字符串"""
+        if not value:
+            return None
+        try:
+            return json.loads(value)
+        except (json.JSONDecodeError, TypeError):
             return None
     
     def get_lapian_by_task_id(self, task_id):
@@ -422,9 +431,9 @@ class LapianDatabase:
                     'total_duration': row[10] if len(row) > 10 else row[6],
                     'main_shot_type': row[11] if len(row) > 11 else row[7],
                     'main_camera_movement': row[12] if len(row) > 12 else row[8],
-                    'shots_data': json.loads(row[13]) if len(row) > 13 and row[13] else [],
-                    'report_data': json.loads(row[14]) if len(row) > 14 and row[14] else {},
-                    'shot_files': json.loads(row[15]) if len(row) > 15 and row[15] else [],
+                    'shots_data': self._safe_json_parse(row[13]) if len(row) > 13 else [],
+                    'report_data': self._safe_json_parse(row[14]) if len(row) > 14 else {},
+                    'shot_files': self._safe_json_parse(row[15]) if len(row) > 15 else [],
                     'created_at': row[16] if len(row) > 16 else row[12]
                 }
                 conn.close()
