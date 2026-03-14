@@ -1449,7 +1449,7 @@
             document.getElementById('downloadMd').href = `/api/lapian/download/${taskId}?filename=lapian_report.md`;
 
             const shots = report.shots || [];
-            const shotFiles = [];
+            const shotFiles = result.shot_files || [];
             
             currentShotsData = shots;
             currentShotFiles = shotFiles;
@@ -1465,7 +1465,7 @@
                     <div class="shots-grid">`;
 
                 shots.forEach((shot, index) => {
-                    const shotFileUrl = currentShotFiles[index] || '';
+                    const shotFileUrl = shotFiles[index] || '';
                     const hasVideo = shotFileUrl.length > 0;
                     
                     shotsHtml += `
@@ -1647,12 +1647,17 @@
                 const response = await fetch(`/api/lapian/record/${recordId}`);
                 const data = await response.json();
                 
-                if (data.success && data.record) {
-                    showHistoryRecord(data.record);
+                if (data.success) {
+                    // 合并 record、report 和 shot_files
+                    const record = data.record || {};
+                    record.report_data = data.report || record.report_data || {};
+                    record.shot_files = data.shot_files || record.shot_files || [];
+                    showHistoryRecord(record);
                 } else {
-                    alert('加载记录失败');
+                    alert('加载记录失败: ' + (data.error || '未知错误'));
                 }
             } catch (e) {
+                console.error('加载记录失败:', e);
                 alert('加载记录失败: ' + e.message);
             }
         }

@@ -91,12 +91,18 @@ def process_lapian():
             shots = report.get('shots', [])
             video_info = report.get('video', {}).get('info', {})
             
+            # 获取提取的镜头文件路径
+            extraction_step = result.get('steps', {}).get('extraction', {})
+            extracted_shots = extraction_step.get('extracted_shots', [])
+            shot_files = [shot.get('file_path', '') for shot in extracted_shots]
+            
             lapian_db.update_lapian(task_id, {
                 'status': 'completed',
                 'total_shots': len(shots),
                 'total_duration': video_info.get('duration', 0),
                 'shots_data': shots,
-                'report_data': report
+                'report_data': report,
+                'shot_files': shot_files
             })
             
             return jsonify({
@@ -106,7 +112,8 @@ def process_lapian():
                 'output_dir': output_dir,
                 'total_shots': len(shots),
                 'report': report,
-                'shot_files': result.get('steps', {}).get('extraction', {}).get('extracted_count', 0),
+                'shot_files': shot_files,
+                'extracted_count': len(extracted_shots),
                 'report_file': os.path.join(output_dir, 'lapian_report.json'),
                 'markdown_file': os.path.join(output_dir, 'lapian_report.md')
             })
@@ -179,14 +186,20 @@ def get_lapian_record(record_id):
         record = lapian_db.get_lapian_by_id(record_id)
         if record:
             output_dir = record.get('output_dir')
+            shots_data = record.get('shots_data', [])
+            shot_files = record.get('shot_files', [])
+            report_data = record.get('report_data', {})
+            
             result = {
                 'success': True,
-                'record': record
+                'record': record,
+                'report': report_data if report_data else {},
+                'shot_files': shot_files
             }
             
             if output_dir:
                 report_file = os.path.join(output_dir, 'lapian_report.json')
-                if os.path.exists(report_file):
+                if os.path.exists(report_file) and not report_data:
                     with open(report_file, 'r', encoding='utf-8') as f:
                         result['report'] = json.load(f)
             
@@ -194,6 +207,8 @@ def get_lapian_record(record_id):
         return jsonify({'success': False, 'error': 'Record not found'}), 404
     except Exception as e:
         logger.error(f"[拉片记录] 获取记录失败: {str(e)}")
+        import traceback
+        traceback.print_exc()
         return jsonify({'success': False, 'error': str(e)}), 500
 
 def delete_lapian_record(record_id):
