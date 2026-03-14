@@ -7,7 +7,8 @@
       "base_url": "",
       "model_name": "",
       "temperature": 0.7,
-      "max_tokens": 2000
+      "max_tokens": 2000,
+      "video_fps": 1.0
     },
     "lapian": {
       "name": "拉片分析模型",
@@ -15,7 +16,8 @@
       "base_url": "",
       "model_name": "",
       "temperature": 0.1,
-      "max_tokens": 3000
+      "max_tokens": 3000,
+      "video_fps": 1.0
     },
     "video_analysis": {
       "name": "视频分析模型",
@@ -23,7 +25,8 @@
       "base_url": "",
       "model_name": "",
       "temperature": 0.1,
-      "max_tokens": 2000
+      "max_tokens": 2000,
+      "video_fps": 1.0
     },
     "image_analysis": {
       "name": "图像分析模型",
@@ -40,6 +43,17 @@
       "model_name": "",
       "temperature": 0.7,
       "max_tokens": 2000
+    }
+  },
+  "upload_settings": {
+    "video_base64_threshold_mb": 50,
+    "image_base64_threshold_mb": 50,
+    "max_video_size_mb": 512,
+    "max_image_size_mb": 512,
+    "fps_range": {
+      "min": 0.2,
+      "max": 5.0,
+      "default": 1.0
     }
   }
 }

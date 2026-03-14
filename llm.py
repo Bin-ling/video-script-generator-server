@@ -31,3 +31,22 @@ def chat(prompt):
         return result['choices'][0]['message']['content'].strip()
     except Exception as e:
         return f'模型错误：{str(e)}'
+
+def get_model_config():
+    """获取模型配置"""
+    import json
+    config_file = 'model_config.json'
+    if os.path.exists(config_file):
+        try:
+            with open(config_file, 'r', encoding='utf-8') as f:
+                return json.load(f)
+        except Exception as e:
+            print(f"加载模型配置失败：{e}")
+    return {}
+
+def get_video_fps():
+    """获取视频fps配置"""
+    config = get_model_config()
+    upload_settings = config.get('upload_settings', {})
+    fps_range = upload_settings.get('fps_range', {})
+    return fps_range.get('default', 1.0)

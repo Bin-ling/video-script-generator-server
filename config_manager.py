@@ -341,6 +341,44 @@ class ConfigManager:
         self.analysis_modules = self._load_analysis_modules()
         self.full_config = self._load_full_config()
         print("配置已重新加载")
+    
+    def get_model_config(self, model_type: str = "default") -> dict:
+        """获取模型配置
+        
+        Args:
+            model_type: 模型类型，如 default, video_analysis, image_analysis 等
+            
+        Returns:
+            模型配置字典
+        """
+        model_config_file = 'model_config.json'
+        if os.path.exists(model_config_file):
+            try:
+                with open(model_config_file, 'r', encoding='utf-8') as f:
+                    config = json.load(f)
+                    models = config.get('models', {})
+                    return models.get(model_type, {})
+            except Exception as e:
+                print(f"加载模型配置失败：{e}")
+                return {}
+        return {}
+    
+    def get_upload_settings(self) -> dict:
+        """获取上传设置
+        
+        Returns:
+            上传设置字典
+        """
+        model_config_file = 'model_config.json'
+        if os.path.exists(model_config_file):
+            try:
+                with open(model_config_file, 'r', encoding='utf-8') as f:
+                    config = json.load(f)
+                    return config.get('upload_settings', {})
+            except Exception as e:
+                print(f"加载上传设置失败：{e}")
+                return {}
+        return {}
 
 
 config_manager = ConfigManager()
