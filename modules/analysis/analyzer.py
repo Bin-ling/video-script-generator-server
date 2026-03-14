@@ -1,7 +1,11 @@
 import os
 import base64
 import httpx
+import logging
 from openai import OpenAI
+
+# 配置日志
+logger = logging.getLogger(__name__)
 
 
 class LargeLanguageModel:
@@ -13,13 +17,12 @@ class LargeLanguageModel:
             base_url: API 端点地址
             model_name: 模型名称
         """
-        # 显式创建httpx.Client，避免自动创建时传递proxies参数
-        # 视频分析需要更长超时时间（5分钟）
-        print(f"初始化API: base_url={base_url}, model={model_name}")
+        logger.info(f"初始化API: base_url={base_url}, model={model_name}")
         
+        # 视频分析需要更长超时时间（10分钟）
         http_client = httpx.Client(
             base_url=base_url,
-            timeout=httpx.Timeout(300.0)
+            timeout=httpx.Timeout(600.0, connect=60.0)
         )
         
         self.client = OpenAI(
@@ -28,7 +31,7 @@ class LargeLanguageModel:
             http_client=http_client
         )
         self.model_name = model_name
-        print(f"API客户端初始化完成")
+        logger.info(f"API客户端初始化完成")
     
     def image_to_base64(self, image_path):
         """将本地图片转换为Base64编码
@@ -102,65 +105,103 @@ class LargeLanguageModel:
         except Exception as e:
             raise Exception(f"API调用失败：{str(e)}")
     
-    def analyze_video_directly(self, video_path, prompt, save_result=True, output_dir=None):
-        """直接分析视频（不提取帧）
+    def analyze_video_directly(self, video_path, prompt, save_result=True, output_dir=None, max_retries=3):
+        """直接分析视频（不提取帧），支持流式输出和重试
         
         Args:
             video_path: 本地视频路径
             prompt: 分析指令（由外部填写使用）
             save_result: 是否保存分析结果
             output_dir: 输出目录（可选）
+            max_retries: 最大重试次数
             
         Returns:
             完整的视频分析报告，以及保存的文件路径（如果save_result为True）
         """
-        # 步骤1：直接分析视频
-        print("正在直接分析视频...")
-        try:
-            # 检查视频文件大小（限制50MB）
-            file_size = os.path.getsize(video_path)
-            file_size_mb = file_size / (1024 * 1024)
-            print(f"视频文件大小：{file_size_mb:.2f} MB")
-            
-            if file_size_mb > 50:
-                return "视频文件过大，超过50MB限制，请使用更小的视频文件进行视频分析", None
-            
-            # 视频转Base64
-            video_base64 = self.video_to_base64(video_path)
-            print("视频转Base64成功")
-            
-            # 构建请求消息
-            messages = [
-                {
-                    "role": "user",
-                    "content": [
-                        {"type": "text", "text": prompt},
-                        {
-                            "type": "video_url",
-                            "video_url": {
-                                "url": f"data:video/mp4;base64,{video_base64}"
-                            }
+        logger.info("=" * 50)
+        logger.info("[视频分析] 开始直接分析视频")
+        
+        # 检查视频文件大小
+        file_size = os.path.getsize(video_path)
+        file_size_mb = file_size / (1024 * 1024)
+        logger.info(f"[视频分析] 视频文件大小：{file_size_mb:.2f} MB")
+        
+        if file_size_mb > 50:
+            logger.warning("[视频分析] 视频文件过大，超过50MB限制")
+            return "视频文件过大，超过50MB限制，请使用更小的视频文件进行视频分析", None
+        
+        # 视频转Base64
+        logger.info("[视频分析] 正在将视频转换为Base64...")
+        video_base64 = self.video_to_base64(video_path)
+        logger.info(f"[视频分析] 视频转Base64成功，长度: {len(video_base64)} 字符")
+        
+        # 构建请求消息
+        messages = [
+            {
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": prompt},
+                    {
+                        "type": "video_url",
+                        "video_url": {
+                            "url": f"data:video/mp4;base64,{video_base64}"
                         }
-                    ]
-                }
-            ]
-            
-            # 调用模型API
-            response = self.client.chat.completions.create(
-                model=self.model_name,
-                messages=messages,
-                temperature=0.1,
-                max_tokens=3000
-            )
-            result = response.choices[0].message.content
-            print("视频分析完成！")
-            
-            return result, None
-        except Exception as e:
-            print(f"视频分析错误: {str(e)}")
-            import traceback
-            traceback.print_exc()
-            return f"视频分析失败：{str(e)}", None
+                    }
+                ]
+            }
+        ]
+        
+        # 重试机制
+        for attempt in range(max_retries):
+            try:
+                logger.info(f"[视频分析] 第 {attempt + 1}/{max_retries} 次尝试")
+                logger.info("[视频分析] 发送请求到模型API...")
+                
+                # 使用流式输出
+                result_chunks = []
+                chunk_count = 0
+                
+                stream = self.client.chat.completions.create(
+                    model=self.model_name,
+                    messages=messages,
+                    temperature=0.1,
+                    max_tokens=8000,  # 增加max_tokens
+                    stream=True  # 启用流式输出
+                )
+                
+                logger.info("[视频分析] 开始接收流式响应...")
+                
+                for chunk in stream:
+                    if chunk.choices[0].delta.content:
+                        content = chunk.choices[0].delta.content
+                        result_chunks.append(content)
+                        chunk_count += 1
+                        
+                        # 每100个chunk打印一次进度
+                        if chunk_count % 100 == 0:
+                            logger.info(f"[视频分析] 已接收 {chunk_count} 个数据块，当前长度: {len(''.join(result_chunks))} 字符")
+                
+                result = ''.join(result_chunks)
+                logger.info(f"[视频分析] 流式响应完成，共 {chunk_count} 个数据块")
+                logger.info(f"[视频分析] 响应总长度: {len(result)} 字符")
+                logger.info("[视频分析] 视频分析完成！")
+                logger.info("=" * 50)
+                
+                return result, None
+                
+            except Exception as e:
+                logger.error(f"[视频分析] 第 {attempt + 1} 次尝试失败: {str(e)}")
+                import traceback
+                logger.error(traceback.format_exc())
+                
+                if attempt < max_retries - 1:
+                    import time
+                    wait_time = (attempt + 1) * 5  # 递增等待时间
+                    logger.info(f"[视频分析] 等待 {wait_time} 秒后重试...")
+                    time.sleep(wait_time)
+                else:
+                    logger.error("[视频分析] 所有重试均失败")
+                    return f"视频分析失败：{str(e)}", None
     
     def extract_video_frames(self, video_path, output_dir="./video_frames", frame_interval=2):
         """视频提取关键帧
