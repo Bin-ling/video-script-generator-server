@@ -1,9 +1,17 @@
 import os
 import json
 import re
+import logging
 from modules.lapian.config import SHOT_TYPES, CAMERA_MOVEMENTS
 from modules.analysis.analyzer import LargeLanguageModel
 from dotenv import load_dotenv
+
+# 配置日志
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
 
 
 def get_lapian_llm():
@@ -330,15 +338,21 @@ class ShotAnalyzer:
         return True, "完整"
 
     def analyze_video_directly(self, video_path, prompt=None, script_text="", save_result=True, output_dir=None):
+        """直接分析视频，支持中断后继续输出"""
+        logger.info("=" * 60)
+        logger.info("[拉片分析] 开始视频拉片分析")
+        logger.info("=" * 60)
+        
         file_size = os.path.getsize(video_path) / (1024 * 1024)
-        print(f"视频文件大小: {file_size:.2f} MB")
+        logger.info(f"[拉片分析] 视频文件: {video_path}")
+        logger.info(f"[拉片分析] 视频大小: {file_size:.2f} MB")
 
         if file_size > 20:
-            print("警告: 视频文件较大")
+            logger.warning("[拉片分析] 视频文件较大，可能需要较长时间")
 
         # 获取视频时长
         video_duration = self._get_video_duration(video_path)
-        print(f"视频时长: {video_duration} 秒")
+        logger.info(f"[拉片分析] 视频时长: {video_duration} 秒")
 
         if prompt is None:
             prompt = f"""请分析这个视频，从专业影视拉片角度进行详细分析。
@@ -370,23 +384,35 @@ class ShotAnalyzer:
 重要提示: 请分析完整的视频，确保最后一个镜头的 end_time 等于视频总时长 {video_duration} 秒!
 相关脚本内容: {script_text[:500] if script_text else '无'}"""
 
-        max_retries = 3
+        max_retries = 5  # 增加重试次数
         retry_count = 0
         all_shots = []
+        last_result_text = ""  # 保存最后一次的结果
+        
+        logger.info(f"[拉片分析] 最大重试次数: {max_retries}")
         
         while retry_count < max_retries:
             try:
+                logger.info("-" * 40)
+                logger.info(f"[拉片分析] 第 {retry_count + 1} 次分析尝试")
+                
                 if retry_count == 0:
                     current_prompt = prompt
+                    logger.info("[拉片分析] 使用初始提示词")
                 else:
                     # 继续请求，要求补充剩余镜头
+                    last_end_time = all_shots[-1].get('end_time', 0) if all_shots else 0
+                    logger.info(f"[拉片分析] 已分析镜头数: {len(all_shots)}")
+                    logger.info(f"[拉片分析] 最后镜头结束时间: {last_end_time}s")
+                    logger.info(f"[拉片分析] 剩余时长: {video_duration - last_end_time}s")
+                    
                     current_prompt = f"""请继续分析这个视频的剩余部分。
 
 视频总时长: {video_duration} 秒
 已分析的镜头数: {len(all_shots)}
-最后一个已分析镜头的结束时间: {all_shots[-1].get('end_time', 0) if all_shots else 0} 秒
+最后一个已分析镜头的结束时间: {last_end_time} 秒
 
-请继续从最后一个镜头结束时间开始分析，补充剩余的镜头。
+请继续从 {last_end_time} 秒开始分析，补充剩余的镜头。
 确保最后一个镜头的 end_time 等于 {video_duration} 秒!
 
 请按以下JSON格式返回:
@@ -405,19 +431,30 @@ class ShotAnalyzer:
 }}
 只返回JSON，不要其他文字!"""
 
+                logger.info("[拉片分析] 发送请求到AI模型...")
                 result_text, _ = self.llm.analyze_video_directly(
                     video_path, 
                     current_prompt, 
                     save_result=False
                 )
                 
-                print(f"AI返回结果长度: {len(result_text) if result_text else 0} 字符")
+                last_result_text = result_text
+                result_length = len(result_text) if result_text else 0
+                logger.info(f"[拉片分析] AI返回结果长度: {result_length} 字符")
+                
+                if not result_text or result_length < 10:
+                    logger.warning("[拉片分析] AI返回结果为空或过短，尝试重试...")
+                    retry_count += 1
+                    continue
                 
                 # 解析结果
+                logger.info("[拉片分析] 开始解析JSON...")
                 parsed = self._parse_json_response(result_text)
                 
                 if parsed:
                     new_shots = parsed.get('shots', [])
+                    logger.info(f"[拉片分析] 解析到 {len(new_shots)} 个新镜头")
+                    
                     if new_shots:
                         # 调整 shot_id
                         start_id = len(all_shots) + 1
@@ -426,26 +463,39 @@ class ShotAnalyzer:
                             all_shots.append(shot)
                             start_id += 1
                         
-                        print(f"已获取 {len(all_shots)} 个镜头")
+                        logger.info(f"[拉片分析] 累计获取 {len(all_shots)} 个镜头")
                         
                         # 检查是否完整
                         is_complete, msg = self._check_complete({"shots": all_shots}, video_duration)
-                        print(f"完整性检查: {msg}")
+                        logger.info(f"[拉片分析] 完整性检查: {msg}")
                         
                         if is_complete:
+                            logger.info("[拉片分析] 分析完成，退出循环")
                             break
+                        else:
+                            logger.info("[拉片分析] 分析不完整，继续请求剩余部分...")
+                            retry_count += 1
+                            continue
                     else:
-                        print("没有获取到新镜头")
-                
-                retry_count += 1
-                
+                        logger.warning("[拉片分析] 没有获取到新镜头，尝试重试...")
+                        retry_count += 1
+                        continue
+                else:
+                    logger.warning("[拉片分析] JSON解析失败，尝试重试...")
+                    retry_count += 1
+                    continue
+                    
             except Exception as e:
-                print(f"分析失败: {e}")
+                logger.error(f"[拉片分析] 分析失败: {e}")
                 import traceback
-                traceback.print_exc()
-                break
+                logger.error(traceback.format_exc())
+                retry_count += 1
+                continue
         
         # 构建最终结果
+        logger.info("-" * 40)
+        logger.info("[拉片分析] 构建最终结果")
+        
         result = {
             "total_shots": len(all_shots),
             "shots": all_shots,
@@ -453,22 +503,25 @@ class ShotAnalyzer:
         }
         
         if len(all_shots) > 0:
-            print(f"JSON解析成功! 共{len(all_shots)}个镜头")
+            logger.info(f"[拉片分析] JSON解析成功! 共{len(all_shots)}个镜头")
         else:
-            print(f"JSON解析失败，保存原始响应用于调试")
-            result["raw_result"] = result_text if result_text else "AI返回为空"
+            logger.warning("[拉片分析] JSON解析失败，保存原始响应用于调试")
+            result["raw_result"] = last_result_text if last_result_text else "AI返回为空"
         
-        print("视频分析完成!")
+        logger.info("[拉片分析] 视频分析完成!")
+        logger.info("=" * 60)
 
         if save_result and output_dir:
             raw_output_path = os.path.join(output_dir, 'ai_raw_response.txt')
             try:
                 with open(raw_output_path, 'w', encoding='utf-8') as f:
-                    f.write(result_text if result_text else "AI返回为空")
-            except:
-                pass
+                    f.write(last_result_text if last_result_text else "AI返回为空")
+                logger.info(f"[拉片分析] 保存原始响应到: {raw_output_path}")
+            except Exception as e:
+                logger.error(f"[拉片分析] 保存原始响应失败: {e}")
             
             output_path = os.path.join(output_dir, 'direct_analysis_result.json')
             self.save_analysis_result(result, output_path)
+            logger.info(f"[拉片分析] 保存分析结果到: {output_path}")
 
         return result
