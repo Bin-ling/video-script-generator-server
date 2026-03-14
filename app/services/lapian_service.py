@@ -89,11 +89,12 @@ def process_lapian():
         if result.get('status') == 'completed':
             report = result.get('report', {})
             shots = report.get('shots', [])
+            video_info = report.get('video', {}).get('info', {})
             
             lapian_db.update_lapian(task_id, {
                 'status': 'completed',
                 'total_shots': len(shots),
-                'total_duration': report.get('video_info', {}).get('duration', 0),
+                'total_duration': video_info.get('duration', 0),
                 'shots_data': shots,
                 'report_data': report
             })
@@ -101,8 +102,11 @@ def process_lapian():
             return jsonify({
                 'success': True,
                 'message': 'Processing completed',
+                'task_id': task_id,
                 'output_dir': output_dir,
                 'total_shots': len(shots),
+                'report': report,
+                'shot_files': result.get('steps', {}).get('extraction', {}).get('extracted_count', 0),
                 'report_file': os.path.join(output_dir, 'lapian_report.json'),
                 'markdown_file': os.path.join(output_dir, 'lapian_report.md')
             })

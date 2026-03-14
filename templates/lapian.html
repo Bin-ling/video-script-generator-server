@@ -1437,22 +1437,21 @@
             const report = result.report || {};
             const summary = report.summary || {};
 
-            document.getElementById('totalShots').textContent = summary.total_shots || 0;
+            document.getElementById('totalShots').textContent = summary.total_shots || result.total_shots || 0;
             document.getElementById('totalDuration').textContent = (summary.total_duration || 0) + 's';
             document.getElementById('avgDuration').textContent = (summary.avg_shot_duration || 0) + 's';
             document.getElementById('mainShotType').textContent = summary.main_shot_type || '-';
             document.getElementById('mainCamera').textContent = summary.main_camera_movement || '-';
-            document.getElementById('extractedCount').textContent = result.steps?.extraction?.extracted_count || 0;
+            document.getElementById('extractedCount').textContent = result.shot_files || result.steps?.extraction?.extracted_count || 0;
 
             const taskId = result.task_id;
             document.getElementById('downloadJson').href = `/api/lapian/download/${taskId}?filename=lapian_report.json`;
             document.getElementById('downloadMd').href = `/api/lapian/download/${taskId}?filename=lapian_report.md`;
 
             const shots = report.shots || [];
-            const shotFiles = result.shot_files || [];
             
             currentShotsData = shots;
-            currentShotFiles = shotFiles;
+            currentShotFiles = [];
 
             const shotsContainer = document.getElementById('shotsContainer');
 
