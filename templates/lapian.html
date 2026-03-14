@@ -1449,9 +1449,10 @@
             document.getElementById('downloadMd').href = `/api/lapian/download/${taskId}?filename=lapian_report.md`;
 
             const shots = report.shots || [];
+            const shotFiles = [];
             
             currentShotsData = shots;
-            currentShotFiles = [];
+            currentShotFiles = shotFiles;
 
             const shotsContainer = document.getElementById('shotsContainer');
 
@@ -1464,7 +1465,7 @@
                     <div class="shots-grid">`;
 
                 shots.forEach((shot, index) => {
-                    const shotFileUrl = shotFiles[index] || '';
+                    const shotFileUrl = currentShotFiles[index] || '';
                     const hasVideo = shotFileUrl.length > 0;
                     
                     shotsHtml += `
