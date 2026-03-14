@@ -382,14 +382,14 @@ class LapianDatabase:
                     'status': row[6] if len(row) > 6 else 'uploaded',
                     'frames_count': row[7] if len(row) > 7 else 0,
                     'duration': row[8] if len(row) > 8 else 0,
-                    'total_shots': row[9] if len(row) > 9 else row[5],
-                    'total_duration': row[10] if len(row) > 10 else row[6],
-                    'main_shot_type': row[11] if len(row) > 11 else row[7],
-                    'main_camera_movement': row[12] if len(row) > 12 else row[8],
-                    'shots_data': self._safe_json_parse(row[13]) if len(row) > 13 else [],
-                    'report_data': self._safe_json_parse(row[14]) if len(row) > 14 else {},
-                    'shot_files': self._safe_json_parse(row[15]) if len(row) > 15 else [],
-                    'created_at': row[16] if len(row) > 16 else row[12]
+                    'total_shots': row[9] if len(row) > 9 else 0,
+                    'total_duration': row[10] if len(row) > 10 else 0,
+                    'main_shot_type': row[11] if len(row) > 11 else '',
+                    'main_camera_movement': row[12] if len(row) > 12 else '',
+                    'shots_data': self._safe_json_parse(row[13], []) if len(row) > 13 else [],
+                    'report_data': self._safe_json_parse(row[14], {}) if len(row) > 14 else {},
+                    'shot_files': self._safe_json_parse(row[15], []) if len(row) > 15 else [],
+                    'created_at': row[16] if len(row) > 16 else ''
                 }
                 conn.close()
                 return record
@@ -397,14 +397,14 @@ class LapianDatabase:
             conn.close()
             return None
     
-    def _safe_json_parse(self, value):
+    def _safe_json_parse(self, value, default=None):
         """安全解析JSON字符串"""
         if not value:
-            return None
+            return default
         try:
             return json.loads(value)
         except (json.JSONDecodeError, TypeError):
-            return None
+            return default
     
     def get_lapian_by_task_id(self, task_id):
         with self._lock:
@@ -427,14 +427,14 @@ class LapianDatabase:
                     'status': row[6] if len(row) > 6 else 'uploaded',
                     'frames_count': row[7] if len(row) > 7 else 0,
                     'duration': row[8] if len(row) > 8 else 0,
-                    'total_shots': row[9] if len(row) > 9 else row[5],
-                    'total_duration': row[10] if len(row) > 10 else row[6],
-                    'main_shot_type': row[11] if len(row) > 11 else row[7],
-                    'main_camera_movement': row[12] if len(row) > 12 else row[8],
-                    'shots_data': self._safe_json_parse(row[13]) if len(row) > 13 else [],
-                    'report_data': self._safe_json_parse(row[14]) if len(row) > 14 else {},
-                    'shot_files': self._safe_json_parse(row[15]) if len(row) > 15 else [],
-                    'created_at': row[16] if len(row) > 16 else row[12]
+                    'total_shots': row[9] if len(row) > 9 else 0,
+                    'total_duration': row[10] if len(row) > 10 else 0,
+                    'main_shot_type': row[11] if len(row) > 11 else '',
+                    'main_camera_movement': row[12] if len(row) > 12 else '',
+                    'shots_data': self._safe_json_parse(row[13], []) if len(row) > 13 else [],
+                    'report_data': self._safe_json_parse(row[14], {}) if len(row) > 14 else {},
+                    'shot_files': self._safe_json_parse(row[15], []) if len(row) > 15 else [],
+                    'created_at': row[16] if len(row) > 16 else ''
                 }
                 conn.close()
                 return record
