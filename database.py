@@ -367,7 +367,11 @@ class LapianDatabase:
             cursor = conn.cursor()
             
             cursor.execute('''
-            SELECT * FROM lapian_records WHERE id = ?
+            SELECT id, task_id, video_name, filename, video_path, output_dir, status,
+                   frames_count, duration, total_shots, total_duration,
+                   main_shot_type, main_camera_movement, shots_data, report_data, shot_files,
+                   created_at
+            FROM lapian_records WHERE id = ?
             ''', (record_id,))
             
             row = cursor.fetchone()
@@ -376,20 +380,20 @@ class LapianDatabase:
                     'id': row[0],
                     'task_id': row[1],
                     'video_name': row[2],
-                    'filename': row[3] if len(row) > 3 else '',
-                    'video_path': row[4] if len(row) > 4 else row[3],
-                    'output_dir': row[5] if len(row) > 5 else row[4],
-                    'status': row[6] if len(row) > 6 else 'uploaded',
-                    'frames_count': row[7] if len(row) > 7 else 0,
-                    'duration': row[8] if len(row) > 8 else 0,
-                    'total_shots': row[9] if len(row) > 9 else 0,
-                    'total_duration': row[10] if len(row) > 10 else 0,
-                    'main_shot_type': row[11] if len(row) > 11 else '',
-                    'main_camera_movement': row[12] if len(row) > 12 else '',
-                    'shots_data': self._safe_json_parse(row[13], []) if len(row) > 13 else [],
-                    'report_data': self._safe_json_parse(row[14], {}) if len(row) > 14 else {},
-                    'shot_files': self._safe_json_parse(row[15], []) if len(row) > 15 else [],
-                    'created_at': row[16] if len(row) > 16 else ''
+                    'filename': row[3] or '',
+                    'video_path': row[4] or '',
+                    'output_dir': row[5] or '',
+                    'status': row[6] or 'uploaded',
+                    'frames_count': row[7] or 0,
+                    'duration': row[8] or 0,
+                    'total_shots': row[9] or 0,
+                    'total_duration': row[10] or 0,
+                    'main_shot_type': row[11] or '',
+                    'main_camera_movement': row[12] or '',
+                    'shots_data': self._safe_json_parse(row[13], []),
+                    'report_data': self._safe_json_parse(row[14], {}),
+                    'shot_files': self._safe_json_parse(row[15], []),
+                    'created_at': row[16] or ''
                 }
                 conn.close()
                 return record

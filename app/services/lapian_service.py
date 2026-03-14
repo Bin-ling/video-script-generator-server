@@ -156,7 +156,7 @@ def get_lapian_result(task_id):
                 'record': record
             }
             
-            if output_dir:
+            if output_dir and isinstance(output_dir, str):
                 report_file = os.path.join(output_dir, 'lapian_report.json')
                 if os.path.exists(report_file):
                     with open(report_file, 'r', encoding='utf-8') as f:

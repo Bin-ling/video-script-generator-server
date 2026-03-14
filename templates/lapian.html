@@ -1668,19 +1668,29 @@
             const shots = record.shots_data || [];
             const shotFiles = record.shot_files || [];
             
+            const videoPaths = shots.map(shot => {
+                let path = shot.file_path || '';
+                if (path && !path.startsWith('http') && !path.startsWith('/')) {
+                    path = '/' + path;
+                }
+                return path;
+            });
+            
             document.getElementById('totalShots').textContent = summary.total_shots || record.total_shots || 0;
             document.getElementById('totalDuration').textContent = (summary.total_duration || record.total_duration || 0) + 's';
             document.getElementById('avgDuration').textContent = (summary.avg_shot_duration || 0) + 's';
             document.getElementById('mainShotType').textContent = summary.main_shot_type || record.main_shot_type || '-';
             document.getElementById('mainCamera').textContent = summary.main_camera_movement || record.main_camera_movement || '-';
-            document.getElementById('extractedCount').textContent = shotFiles.length;
+            
+            const hasAnyVideo = videoPaths.some(p => p && p.length > 0);
+            document.getElementById('extractedCount').textContent = hasAnyVideo ? videoPaths.filter(p => p && p.length > 0).length : shotFiles.length;
             
             const taskId = record.task_id;
             document.getElementById('downloadJson').href = `/api/lapian/download/${taskId}?filename=lapian_report.json`;
             document.getElementById('downloadMd').href = `/api/lapian/download/${taskId}?filename=lapian_report.md`;
             
             currentShotsData = shots;
-            currentShotFiles = shotFiles;
+            currentShotFiles = videoPaths;
             
             const shotsContainer = document.getElementById('shotsContainer');
             
@@ -1693,8 +1703,8 @@
                     <div class="shots-grid">`;
                 
                 shots.forEach((shot, index) => {
-                    const shotFileUrl = shotFiles[index] || '';
-                    const hasVideo = shotFileUrl.length > 0;
+                    const shotFileUrl = videoPaths[index] || shotFiles[index] || '';
+                    const hasVideo = shotFileUrl && shotFileUrl.length > 0;
                     
                     shotsHtml += `
                         <div class="shot-card ${hasVideo ? 'clickable' : ''}" onclick="${hasVideo ? 'openShotModal(' + index + ')' : ''}" ${!hasVideo ? 'style="cursor: default;"' : ''}>
