@@ -142,16 +142,21 @@ class ShotAnalyzer:
         return shots
 
     def _parse_json_response(self, text):
-        """JSON 解析"""
+        """JSON 解析 - 增强版，支持多种错误修复"""
         if not text:
             return None
         
         text = text.strip()
         text = text.replace('\x00', '').replace('\ufeff', '')
         
+        # 移除可能的 BOM 标记
+        if text.startswith('\ufeff'):
+            text = text[1:]
+        
         if text.startswith('{'):
             text = '{' + text[1:].lstrip()
         
+        # 尝试直接解析
         try:
             result = json.loads(text)
             if result:
@@ -159,28 +164,43 @@ class ShotAnalyzer:
         except:
             pass
         
+        # 提取 JSON 部分
         json_match = re.search(r'\{[\s\S]*\}', text)
         if json_match:
             json_str = json_match.group()
             
-            for attempt in range(6):
+            for attempt in range(10):
                 try:
                     result = json.loads(json_str)
                     if result:
                         return result
-                except:
+                except Exception as e:
                     if attempt == 0:
+                        # 修复尾部逗号
                         json_str = re.sub(r',\s*\}', '}', json_str)
                         json_str = re.sub(r',\s*\]', ']', json_str)
                     elif attempt == 1:
+                        # 移除尾部不完整的部分
                         json_str = json_str.rstrip()
                         if json_str.endswith(','):
                             json_str = json_str[:-1]
                     elif attempt == 2:
-                        json_str = json_str.replace("'", '"')
+                        # 修复被截断的 JSON - 尝试补全
+                        json_str = self._repair_truncated_json(json_str)
                     elif attempt == 3:
-                        json_str = json_str.replace(''', '"').replace(''', '"')
+                        # 替换单引号为双引号
+                        json_str = json_str.replace("'", '"')
                     elif attempt == 4:
+                        # 替换中文引号
+                        json_str = json_str.replace(''', '"').replace(''', '"')
+                    elif attempt == 5:
+                        # 修复未转义的引号
+                        json_str = re.sub(r'(?<!\\)"(?=[^"]*"[^"]*$)', '\\"', json_str)
+                    elif attempt == 6:
+                        # 修复换行符
+                        json_str = json_str.replace('\n', '\\n').replace('\r', '\\r')
+                    elif attempt == 7:
+                        # 尝试只解析 shots 数组
                         shots = self._parse_shots_from_text(json_str)
                         if shots:
                             return {
@@ -188,7 +208,8 @@ class ShotAnalyzer:
                                 "shots": shots,
                                 "summary": {}
                             }
-                    elif attempt == 5:
+                    elif attempt == 8:
+                        # 尝试从原始文本解析
                         shots = self._parse_shots_from_text(text)
                         if shots:
                             return {
@@ -196,7 +217,17 @@ class ShotAnalyzer:
                                 "shots": shots,
                                 "summary": {}
                             }
+                    elif attempt == 9:
+                        # 最后尝试：提取所有完整的镜头对象
+                        shots = self._extract_complete_shots(json_str)
+                        if shots:
+                            return {
+                                "total_shots": len(shots),
+                                "shots": shots,
+                                "summary": {}
+                            }
         
+        # 最后尝试从文本解析
         shots = self._parse_shots_from_text(text)
         if shots:
             return {
@@ -206,6 +237,70 @@ class ShotAnalyzer:
             }
         
         return None
+    
+    def _repair_truncated_json(self, json_str):
+        """修复被截断的 JSON"""
+        # 统计括号数量
+        open_braces = json_str.count('{') - json_str.count('}')
+        open_brackets = json_str.count('[') - json_str.count(']')
+        
+        # 补全缺失的括号
+        if open_brackets > 0 or open_brackets > 0:
+            # 移除最后一个不完整的部分
+            json_str = json_str.rstrip()
+            
+            # 如果以逗号结尾，移除逗号
+            if json_str.endswith(','):
+                json_str = json_str[:-1]
+            
+            # 如果以引号结尾，可能是字符串被截断
+            if json_str.endswith('"'):
+                # 查找这个引号开始的位置
+                last_quote_pos = json_str.rfind('"', 0, len(json_str)-1)
+                if last_quote_pos > 0:
+                    # 检查是否是 key_elements 数组被截断
+                    if '"key_elements"' in json_str[last_quote_pos-50:]:
+                        json_str = json_str[:last_quote_pos] + '"]'
+                    else:
+                        json_str = json_str + '"'
+            
+            # 补全括号
+            for _ in range(open_brackets):
+                json_str += '}'
+            for _ in range(open_brackets):
+                json_str += ']'
+        
+        return json_str
+    
+    def _extract_complete_shots(self, text):
+        """提取所有完整的镜头对象"""
+        shots = []
+        
+        # 使用正则表达式匹配完整的镜头对象
+        pattern = r'\{\s*"shot_id"\s*:\s*(\d+)\s*,\s*"start_time"\s*:\s*([\d.]+)\s*,\s*"end_time"\s*:\s*([\d.]+)\s*,\s*"shot_type"\s*:\s*"([^"]*)"\s*,\s*"camera_movement"\s*:\s*"([^"]*)"\s*,\s*"content"\s*:\s*"([^"]*)"\s*,\s*"key_elements"\s*:\s*\[(.*?)\]\s*\}'
+        
+        for match in re.finditer(pattern, text, re.DOTALL):
+            try:
+                shot = {
+                    "shot_id": int(match.group(1)),
+                    "start_time": float(match.group(2)),
+                    "end_time": float(match.group(3)),
+                    "shot_type": match.group(4),
+                    "camera_movement": match.group(5),
+                    "content": match.group(6),
+                    "key_elements": []
+                }
+                
+                # 解析 key_elements
+                key_elements_text = match.group(7)
+                for item in re.finditer(r'"([^"]+)"', key_elements_text):
+                    shot['key_elements'].append(item.group(1))
+                
+                shots.append(shot)
+            except:
+                continue
+        
+        return shots
 
     def _check_complete(self, result, video_duration):
         """检查分析结果是否完整"""
